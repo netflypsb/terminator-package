@@ -182,6 +182,7 @@ Skills are markdown files in the `skills/` directory that provide domain experti
 | coding | Software development | User asks to write or debug code |
 | summarize | Summarization across formats | User asks to summarize, condense, extract key points |
 | onboarding | Setup and capability guidance | User is new or asks what you can do |
+| terminator-expert | Terminator knowledge & troubleshooting | User asks about Terminator setup, config, features, or troubleshooting |
 
 ---
 

@@ -4,63 +4,82 @@
 
 Terminator brings the high-powered agentic capabilities of coding IDEs (Windsurf, Cursor, Claude Code, Cline, Codex) to **general knowledge work** — research, writing, data analysis, communications, scheduling, and full autonomous operation with remote control via Telegram, Discord, and Slack.
 
-> **7 MCP servers · 48+ tools · 9 skills · 6 agents · 3 hooks · 3 task chains**
+> **7 MCP servers · 48+ tools · 10 skills · 6 agents · 3 hooks · 3 task chains**
 
 ---
 
 ## One-Prompt Install
 
-Open your agentic IDE, clone or open this repository, and give this single prompt:
+Open your project in an agentic IDE and give this single prompt:
 
-> **"Read the INSTALL section in README.md and set up the Terminator Package in this workspace."**
+> **"Read the INSTALL section in the README at https://github.com/netflypsb/terminator-package and set up Terminator in this workspace."**
 
-That's it. Your AI agent will handle the rest.
+That's it. Your AI agent will handle the rest. Terminator installs into a hidden `.terminator-package/` folder so your project stays clean.
 
 ### INSTALL
 
-These are the exact steps the AI agent (or you) should follow:
+These are the exact steps the AI agent (or you) should follow to add Terminator to an **existing project**:
 
 ```bash
-# 1. Verify Node.js >= 20
+# 1. Clone Terminator into a hidden subfolder (keeps your project clean)
+git clone https://github.com/netflypsb/terminator-package.git .terminator-package
+
+# 2. Verify Node.js >= 20
 node --version
 
-# 2. Install pnpm if not present
+# 3. Install pnpm if not present
 npm install -g pnpm
 
-# 3. Install all dependencies
-pnpm install
+# 4. Install all dependencies
+cd .terminator-package && pnpm install
 
-# 4. Build all MCP servers and packages
+# 5. Build all MCP servers and packages
 pnpm build
 
-# 5. Run the installer (detects your IDE, configures everything)
-node installer/dist/install.js
-
-# 6. Create your .env file for API keys (optional — only needed for communication channels)
-cp .env.example .env
-# Edit .env to add Telegram/Discord/Slack tokens if desired
+# 6. Go back to project root and run the installer
+cd ..
+node .terminator-package/installer/dist/install.js
 
 # 7. Run the doctor to verify everything is healthy
-node installer/dist/doctor.js
+node .terminator-package/installer/dist/doctor.js
 ```
 
 After installation, **restart your IDE** to load the new MCP server configurations.
 
 The installer automatically:
+- Detects **embedded mode** (source in `.terminator-package/`, configs at project root)
 - Detects your IDE (Windsurf, Cursor, Claude Code, Cline, VS Code)
-- Generates the MCP server configuration file (`.mcp.json` or `.cursor/mcp.json`)
-- Generates the IDE-specific system prompt (`.windsurfrules`, `.cursorrules`, `CLAUDE.md`, etc.)
-- Creates the `.terminator/` runtime directory with default config
-- Installs all 9 skills, 6 agents, and 3 hooks
+- Generates the MCP server configuration (`.mcp.json` or `.cursor/mcp.json`) with paths pointing into `.terminator-package/`
+- Generates the IDE-specific system prompt (`.windsurfrules`, `.cursorrules`, `CLAUDE.md`, etc.) with Terminator path awareness
+- Creates `.terminator/` runtime directory with default config at project root
+- Installs all 10 skills, 6 agents, and 3 hooks
 - Sets up a skills index and hooks registry
+
+**Your project directory stays clean** — only these hidden items are added:
+- `.terminator-package/` — Terminator source (hidden folder)
+- `.terminator/` — Runtime state (hidden folder)
+- `.mcp.json` — MCP server config (hidden file)
+- `.windsurfrules` / `.cursorrules` / etc. — IDE system prompt (hidden file)
+- `.env` — API keys (optional, hidden file)
 
 ### Verify Installation
 
 ```bash
-node installer/dist/doctor.js
+node .terminator-package/installer/dist/doctor.js
 ```
 
-You should see `22 passed, 0 failed — HEALTHY`.
+You should see `22+ passed, 0 failed — HEALTHY`.
+
+### Alternative: Standalone Install
+
+If you want Terminator as the project root (e.g., for a dedicated worker workspace):
+
+```bash
+git clone https://github.com/netflypsb/terminator-package.git my-workspace
+cd my-workspace
+pnpm install && pnpm build
+node installer/dist/install.js
+```
 
 ---
 
@@ -93,6 +112,7 @@ Once installed, your IDE agent becomes **Terminator** — a fully capable autono
 | **coding** | Software development, debugging, testing |
 | **summarize** | Condensing documents, pages, conversations |
 | **onboarding** | Guiding new users through capabilities |
+| **terminator-expert** | Expert knowledge of Terminator setup, config, troubleshooting |
 
 ### Agents (specialized subagents)
 
@@ -277,10 +297,14 @@ See [resources/guides/autonomous-mode.md](resources/guides/autonomous-mode.md) f
 ## Uninstall
 
 ```bash
+# Embedded mode
+node .terminator-package/installer/dist/uninstall.js
+
+# Standalone mode
 node installer/dist/uninstall.js
 ```
 
-This removes generated config files (`.mcp.json`, system prompt files, `.terminator/`) but leaves your source code intact.
+This removes generated config files (`.mcp.json`, system prompt files, `.terminator/`) but leaves your source code and `.terminator-package/` intact. Delete `.terminator-package/` manually for full removal.
 
 ---
 

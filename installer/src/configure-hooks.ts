@@ -18,8 +18,8 @@ interface Hook {
   description?: string;
 }
 
-function loadHooks(workspacePath: string): Hook[] {
-  const hooksDir = path.join(workspacePath, "hooks");
+function loadHooks(sourcePath: string): Hook[] {
+  const hooksDir = path.join(sourcePath, "hooks");
   if (!fs.existsSync(hooksDir)) return [];
 
   const hooks: Hook[] = [];
@@ -223,9 +223,10 @@ export interface HookInstallResult {
 
 export function configureHooks(
   workspacePath: string,
-  ide: IDE
+  ide: IDE,
+  sourcePath?: string
 ): HookInstallResult {
-  const hooks = loadHooks(workspacePath);
+  const hooks = loadHooks(sourcePath || workspacePath);
 
   if (hooks.length === 0) {
     return { hooksLoaded: 0, hooksRegistered: 0, method: "none" };

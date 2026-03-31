@@ -85,9 +85,9 @@ function ensureTerminatorDir(workspacePath: string): void {
   }
 }
 
-function setupEnvFile(workspacePath: string): void {
+function setupEnvFile(workspacePath: string, sourcePath: string): void {
   const envPath = path.join(workspacePath, ".env");
-  const examplePath = path.join(workspacePath, ".env.example");
+  const examplePath = path.join(sourcePath, ".env.example");
 
   if (fs.existsSync(envPath)) {
     log(".env file already exists, skipping");
@@ -110,11 +110,11 @@ const MCP_SERVERS = [
   "terminator-system",
 ];
 
-function verifyMcpServersBuilt(workspacePath: string): { built: string[]; missing: string[] } {
+function verifyMcpServersBuilt(sourcePath: string): { built: string[]; missing: string[] } {
   const built: string[] = [];
   const missing: string[] = [];
   for (const name of MCP_SERVERS) {
-    const dist = path.join(workspacePath, "mcp-servers", name, "dist", "index.js");
+    const dist = path.join(sourcePath, "mcp-servers", name, "dist", "index.js");
     if (fs.existsSync(dist)) {
       built.push(name);
     } else {
@@ -124,26 +124,65 @@ function verifyMcpServersBuilt(workspacePath: string): { built: string[]; missin
   return { built, missing };
 }
 
+function detectSourcePath(workspacePath: string): { sourcePath: string; mode: "standalone" | "embedded" } {
+  // Check 1: Are we inside the terminator-package itself? (standalone)
+  if (fs.existsSync(path.join(workspacePath, "TERMINATOR.md")) &&
+      fs.existsSync(path.join(workspacePath, "mcp-servers"))) {
+    return { sourcePath: workspacePath, mode: "standalone" };
+  }
+
+  // Check 2: Is .terminator-package/ present in cwd? (embedded)
+  const embeddedPath = path.join(workspacePath, ".terminator-package");
+  if (fs.existsSync(path.join(embeddedPath, "TERMINATOR.md"))) {
+    return { sourcePath: embeddedPath, mode: "embedded" };
+  }
+
+  // Check 3: Maybe the installer itself is being run via node .terminator-package/installer/dist/install.js
+  // In that case, __dirname points inside .terminator-package/installer/dist/
+  // Resolve the source from the installer's own location
+  const installerDir = path.dirname(new URL(import.meta.url).pathname);
+  // Normalize Windows paths (remove leading / on Windows)
+  const normalizedDir = process.platform === "win32" ? installerDir.replace(/^\//, "") : installerDir;
+  const possibleSource = path.resolve(normalizedDir, "..", "..");
+  if (fs.existsSync(path.join(possibleSource, "TERMINATOR.md"))) {
+    return {
+      sourcePath: possibleSource,
+      mode: possibleSource === workspacePath ? "standalone" : "embedded",
+    };
+  }
+
+  // Fallback: error
+  return { sourcePath: workspacePath, mode: "standalone" };
+}
+
 async function main() {
   console.log(BANNER);
 
   const workspacePath = process.cwd();
   console.log(`  ${dim('Workspace:')} ${workspacePath}`);
 
-  // Step 1: Verify we're in the terminator-package root
+  // Step 1: Detect mode and verify source
   step('Verifying workspace...');
-  const terminatorMd = path.join(workspacePath, "TERMINATOR.md");
+  const { sourcePath, mode } = detectSourcePath(workspacePath);
+
+  const terminatorMd = path.join(sourcePath, "TERMINATOR.md");
   if (!fs.existsSync(terminatorMd)) {
     logError(
-      "TERMINATOR.md not found. Are you running this from the terminator-package root?"
+      "TERMINATOR.md not found. Clone the repo into .terminator-package/ or run from the terminator-package root."
     );
     process.exit(1);
+  }
+
+  if (mode === "embedded") {
+    logSuccess(`Embedded mode — source: ${bold(path.relative(workspacePath, sourcePath) || '.')}`);
+  } else {
+    logSuccess(`Standalone mode — source is workspace root`);
   }
   logSuccess("Found TERMINATOR.md");
 
   // Step 2: Check MCP servers are built
   step('Checking MCP server builds...');
-  const { built, missing } = verifyMcpServersBuilt(workspacePath);
+  const { built, missing } = verifyMcpServersBuilt(sourcePath);
   if (built.length === 0) {
     logError("No MCP servers built. Run 'pnpm build' first.");
     process.exit(1);
@@ -165,12 +204,12 @@ async function main() {
 
   // Step 5: Configure MCP servers
   step('Configuring MCP servers...');
-  const mcpPath = configureMcp(workspacePath, detection.ide);
+  const mcpPath = configureMcp(workspacePath, detection.ide, sourcePath);
   logSuccess(`MCP config → ${bold(path.relative(workspacePath, mcpPath))}`);
 
   // Step 6: Configure IDE-specific prompt file
   step('Writing system prompt...');
-  const promptPath = configurePrompts(workspacePath, detection.ide);
+  const promptPath = configurePrompts(workspacePath, detection.ide, sourcePath);
   if (promptPath) {
     logSuccess(`System prompt → ${bold(path.relative(workspacePath, promptPath))}`);
   } else {
@@ -179,7 +218,7 @@ async function main() {
 
   // Step 7: Install skills and agents
   step('Installing skills & agents...');
-  const skillResult = configureSkills(workspacePath, detection.ide);
+  const skillResult = configureSkills(workspacePath, detection.ide, sourcePath);
   logSuccess(`${skillResult.skillsCopied} skills, ${skillResult.agentsCopied} agents installed`);
   if (skillResult.workflowsCreated > 0) {
     logSuccess(`${skillResult.workflowsCreated} Windsurf workflows created`);
@@ -187,7 +226,7 @@ async function main() {
 
   // Step 8: Install hooks
   step('Registering hooks...');
-  const hookResult = configureHooks(workspacePath, detection.ide);
+  const hookResult = configureHooks(workspacePath, detection.ide, sourcePath);
   if (hookResult.hooksLoaded > 0) {
     logSuccess(`${hookResult.hooksRegistered} hooks registered via ${hookResult.method}`);
   } else {
@@ -196,7 +235,7 @@ async function main() {
 
   // Step 9: Set up .env file
   step('Setting up environment...');
-  setupEnvFile(workspacePath);
+  setupEnvFile(workspacePath, sourcePath);
 
   // Done
   console.log(`\n  ${green('══════════════════════════════════════════════')}`);
