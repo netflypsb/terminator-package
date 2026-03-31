@@ -30,7 +30,7 @@ node --version
 # 3. Install pnpm if not present
 npm install -g pnpm
 
-# 4. Install all dependencies
+# 4. Install all dependencies (this also rebuilds native SQLite modules)
 cd .terminator-package && pnpm install
 
 # 5. Build all MCP servers and packages
@@ -40,7 +40,8 @@ pnpm build
 cd ..
 node .terminator-package/installer/dist/install.js
 
-# 7. Run the doctor to verify everything is healthy
+# 7. Restart your IDE to pick up MCP server configurations
+# 8. Run the doctor to verify everything is healthy
 node .terminator-package/installer/dist/doctor.js
 ```
 
