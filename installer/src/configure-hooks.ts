@@ -19,17 +19,17 @@ interface Hook {
 }
 
 function loadHooks(sourcePath: string): Hook[] {
-  const hooksDir = path.join(sourcePath, "hooks");
-  if (!fs.existsSync(hooksDir)) return [];
+  const workflowsDir = path.join(sourcePath, "workflows");
+  if (!fs.existsSync(workflowsDir)) return [];
 
   const hooks: Hook[] = [];
-  const files = fs.readdirSync(hooksDir).filter(
-    (f) => f.endsWith(".json") && f !== "hook-schema.json"
+  const files = fs.readdirSync(workflowsDir).filter(
+    (f) => f.endsWith(".json") && f !== "workflow-schema.json"
   );
 
   for (const file of files) {
     try {
-      const content = fs.readFileSync(path.join(hooksDir, file), "utf-8");
+      const content = fs.readFileSync(path.join(workflowsDir, file), "utf-8");
       const hook = JSON.parse(content) as Hook;
       if (hook.name && hook.trigger && hook.action) {
         hooks.push(hook);

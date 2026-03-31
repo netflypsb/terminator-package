@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
+import path from "path";
+import fs from "fs";
+import { spawn } from "child_process";
+import type { VsCodeApi } from "./webview/types.js";
 
 export class TerminatorPanelProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -63,8 +65,8 @@ export class TerminatorPanelProvider implements vscode.WebviewViewProvider {
         case "loadMemories":
           await this._loadMemories();
           break;
-        case "loadConfig":
-          await this._loadConfig();
+        case "loadCommunications":
+          await this._loadCommunications();
           break;
         case "saveConfig":
           await this._handleWriteFile(
@@ -204,22 +206,247 @@ export class TerminatorPanelProvider implements vscode.WebviewViewProvider {
   }
 
   private async _loadSchedules() {
-    // We read from the schedules DB indirectly — the webview can't access SQLite directly.
-    // Instead, we check if the DB file exists and report its size.
     const ws = this._getWorkspacePath();
-    const dbPath = path.join(ws, ".terminator", "schedules.db");
-    const exists = fs.existsSync(dbPath);
-    let size = 0;
-    if (exists) {
-      size = fs.statSync(dbPath).size;
+    
+    // Initialize empty data structure
+    const data = {
+      tasks: [],
+      queue: [],
+      daemonStatus: {
+        running: false,
+        started_at: undefined,
+        pid: undefined,
+        executions_completed: 0,
+        executions_failed: 0,
+        last_execution: undefined,
+        last_error: undefined
+      }
+    };
+
+    // Check daemon status
+    const daemonStatusPath = path.join(ws, ".terminator", "daemon-status.json");
+    if (fs.existsSync(daemonStatusPath)) {
+      try {
+        const daemonStatus = JSON.parse(fs.readFileSync(daemonStatusPath, "utf-8"));
+        data.daemonStatus = { ...data.daemonStatus, ...daemonStatus };
+      } catch (error) {
+        console.error("Failed to read daemon status:", error);
+      }
     }
+
+    // Check if scheduler is built
+    const schedulerPath = path.join(ws, "mcp-servers", "terminator-scheduler", "dist", "index.js");
+    if (!fs.existsSync(schedulerPath)) {
+      this._postToWebview({
+        command: "schedulesData",
+        data: {
+          ...data,
+          note: "Scheduler not built. Run 'pnpm build:memory' to build the scheduler MCP server.",
+        },
+      });
+      return;
+    }
+
+    try {
+      // Fetch tasks via MCP
+      const tasks = await this._invokeMcpTool(schedulerPath, "schedule_list", {});
+      if (tasks && tasks.content && tasks.content[0]) {
+        // Parse tasks from response
+        const tasksText = tasks.content[0].text;
+        // Simple parsing - in production, this would be more robust
+        const taskLines = tasksText.split('\n').filter((line: string) => line.includes('|'));
+        data.tasks = taskLines.map((line: string) => {
+          const parts = line.split('|').map((p: string) => p.trim());
+          return {
+            id: parts[1] || '',
+            name: parts[2] || '',
+            type: parts[3] || 'once',
+            status: parts[4] || 'active',
+            next_run: parts[5] || null,
+            last_run: parts[6] || null,
+            description: parts[7] || '',
+            run_count: parseInt(parts[8]) || 0,
+            max_runs: parts[9] ? parseInt(parts[9]) : null,
+            cron_expression: parts[10] || null,
+            chain_tasks: parts[11] || null,
+            chain_index: parseInt(parts[12]) || 0,
+            created_at: parts[13] || '',
+            updated_at: parts[14] || ''
+          };
+        });
+      }
+
+      // Fetch execution queue
+      const queue = await this._invokeMcpTool(schedulerPath, "schedule_get_pending_executions", {});
+      if (queue && queue.content && queue.content[0]) {
+        const queueText = queue.content[0].text;
+        const queueLines = queueText.split('\n').filter((line: string) => line.includes('Execution #'));
+        data.queue = queueLines.map((line: string) => {
+          const idMatch = line.match(/Execution #(\d+)/);
+          const taskMatch = line.match(/\*\*(.+?)\*\*/);
+          const scheduledMatch = line.match(/Scheduled: (.+?)(?:\s|$)/);
+          const statusMatch = line.match(/Status: (\w+)/);
+          
+          return {
+            id: idMatch ? parseInt(idMatch[1]) : 0,
+            task_id: '',
+            task_name: taskMatch ? taskMatch[1] : '',
+            task_description: '',
+            scheduled_for: scheduledMatch ? scheduledMatch[1] : '',
+            queued_at: '',
+            claimed_at: null,
+            claimed_by: null,
+            completed_at: null,
+            status: statusMatch ? statusMatch[1] as any : 'pending',
+            result: null,
+            retry_count: 0
+          };
+        });
+      }
+
+    } catch (error) {
+      console.error("Failed to load schedule data:", error);
+      // Add note to data
+      (data as any).note = "Failed to load schedule data. Check that the scheduler is running.";
+    }
+
     this._postToWebview({
       command: "schedulesData",
+      data,
+    });
+  }
+
+  private async _invokeMcpTool(schedulerPath: string, toolName: string, args: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const child = spawn("node", [schedulerPath], {
+        stdio: ["pipe", "pipe", "pipe"],
+        cwd: this._getWorkspacePath(),
+        env: {
+          ...process.env,
+          SCHEDULER_DB_PATH: path.join(this._getWorkspacePath(), ".terminator", "schedules.db")
+        }
+      });
+
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+
+      child.on("error", (error) => {
+        reject(error);
+      });
+
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`MCP process exited with code ${code}: ${stderr}`));
+          return;
+        }
+
+        try {
+          // Parse MCP response
+          const lines = stdout.trim().split('\n');
+          const lastLine = lines[lines.length - 1];
+          
+          if (lastLine) {
+            const response = JSON.parse(lastLine);
+            resolve(response);
+          } else {
+            resolve(null);
+          }
+        } catch (parseError) {
+          reject(new Error(`Failed to parse MCP response: ${parseError instanceof Error ? parseError.message : String(parseError)}`));
+        }
+      });
+
+      // Send the tool invocation request
+      const request = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      };
+
+      child.stdin.write(JSON.stringify(request) + "\n");
+      child.stdin.end();
+    });
+  }
+
+  private async _loadCommunications() {
+    const ws = this._getWorkspacePath();
+    
+    // Check channels from .env
+    const envPath = path.join(ws, ".env");
+    const channels: any[] = [];
+    const recentMessages: any[] = [];
+    
+    if (fs.existsSync(envPath)) {
+      const env = fs.readFileSync(envPath, "utf-8");
+      const envLines = env.split('\n');
+      
+      // Check each channel
+      const channelConfigs = [
+        {
+          id: "telegram",
+          name: "Telegram",
+          icon: "✈️",
+          envKeys: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"],
+          configured: env.includes("TELEGRAM_BOT_TOKEN=") && !env.includes("# TELEGRAM_BOT_TOKEN")
+        },
+        {
+          id: "discord",
+          name: "Discord",
+          icon: "🎮",
+          envKeys: ["DISCORD_BOT_TOKEN", "DISCORD_CHANNEL_ID"],
+          configured: env.includes("DISCORD_BOT_TOKEN=") && !env.includes("# DISCORD_BOT_TOKEN")
+        },
+        {
+          id: "slack",
+          name: "Slack",
+          icon: "💬",
+          envKeys: ["SLACK_BOT_TOKEN", "SLACK_CHANNEL_ID"],
+          configured: env.includes("SLACK_BOT_TOKEN=") && !env.includes("# SLACK_BOT_TOKEN")
+        },
+        {
+          id: "email",
+          name: "Email",
+          icon: "📧",
+          envKeys: ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"],
+          configured: env.includes("SMTP_HOST=") && !env.includes("# SMTP_HOST")
+        },
+        {
+          id: "webhook",
+          name: "Webhooks",
+          icon: "🔗",
+          envKeys: [],
+          configured: true // Always available
+        }
+      ];
+      
+      for (const config of channelConfigs) {
+        channels.push({
+          ...config,
+          credentials: config.envKeys,
+          lastMessage: null,
+          lastCheck: new Date().toISOString()
+        });
+      }
+    }
+
+    this._postToWebview({
+      command: "communicationsData",
       data: {
-        dbExists: exists,
-        dbSize: size,
-        note: "Use the MCP tools (schedule_list, schedule_check_pending) to interact with schedules. The UI provides a visual overview.",
-      },
+        channels,
+        recentMessages
+      }
     });
   }
 

@@ -1,0 +1,30 @@
+{
+  "name": "terminator-daemon",
+  "version": "0.1.0",
+  "description": "Background daemon for autonomous Terminator task execution",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "daemon",
+    "scheduler",
+    "terminator",
+    "autonomous"
+  ],
+  "author": "netflypsb",
+  "license": "MIT"
+}

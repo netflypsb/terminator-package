@@ -1,21 +1,21 @@
-# Terminator Hooks
+# Terminator Workflow Templates
 
-Hooks enable event-driven automation in the Terminator system. They define **what happens** when specific **events occur** in your workspace.
+**Important**: These are workflow templates, not automated event-driven hooks. They provide structured prompts that you can manually invoke to perform common tasks. The templates are translated into IDE-specific workflows (Windsurf) or used as prompt guides (other IDEs).
 
-## How Hooks Work
+## How Workflow Templates Work
 
-Each hook is a JSON file that specifies:
-- **Trigger**: The event that fires the hook (workspace open, schedule due, message received, etc.)
-- **Action**: What to do (send a prompt, call a tool, run a chain)
-- **Conditions**: Optional filters (which channels, which files, how often)
+Each template is a JSON file that specifies:
+- **Trigger**: When this template should be used (workspace open, schedule due, etc.)
+- **Action**: What prompt to send to the AI assistant
+- **Instructions**: Step-by-step guidance for the AI
 
-## Built-in Hooks
+## Built-in Templates
 
-| Hook | Trigger | What It Does |
-|------|---------|-------------|
-| `on-workspace-open.json` | Workspace opens | Load context, check pending tasks, greet user |
-| `on-schedule-trigger.json` | Scheduled task is due | Execute the task, notify on completion |
-| `on-message-received.json` | Message arrives on a channel | Parse commands, execute, respond |
+| Template | When to Use | What It Does |
+|----------|-------------|-------------|
+| `on-workspace-open.json` | Starting a new session | Load context, check pending tasks, greet user |
+| `on-schedule-trigger.json` | Processing scheduled tasks | Execute queued tasks, notify on completion |
+| `on-message-received.json` | Handling incoming messages | Parse commands, execute, respond |
 
 ## Hook Specification
 
