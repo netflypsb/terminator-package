@@ -1,0 +1,45 @@
+{
+  "name": "terminator-package",
+  "version": "0.1.0",
+  "description": "AI Worker package that transforms agentic IDEs into autonomous knowledge workers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:memory": "pnpm --filter terminator-memory build",
+    "build:installer": "pnpm --filter terminator-installer build",
+    "install:terminator": "node installer/dist/install.js",
+    "doctor": "node installer/dist/doctor.js",
+    "clean": "pnpm -r exec rimraf dist",
+    "test": "pnpm -r test"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "mcp",
+    "terminator",
+    "autonomous",
+    "ide",
+    "windsurf",
+    "cursor",
+    "claude-code"
+  ],
+  "author": "netflypsb",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netflypsb/terminator-package.git"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3"
+  }
+}

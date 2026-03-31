@@ -1,0 +1,22 @@
+{
+  "name": "Data Analysis",
+  "description": "Data-focused workspace for CSV analysis, SQL queries, statistics, and report generation.",
+  "version": "0.1.0",
+  "servers": {
+    "terminator-memory": true,
+    "terminator-scheduler": false,
+    "terminator-comms": false,
+    "terminator-browser": true,
+    "terminator-data": true,
+    "terminator-files": true,
+    "terminator-system": true
+  },
+  "skills": ["analysis", "research", "writing", "summarize", "coding"],
+  "agents": ["analyst", "researcher", "writer"],
+  "folders": ["raw-data", "processed", "analysis", "reports"],
+  "autonomous": {
+    "enabled": false,
+    "requireConfirmation": ["delete"],
+    "autoApprove": ["read", "write_file", "search", "browse"]
+  }
+}

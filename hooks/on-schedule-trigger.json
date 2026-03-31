@@ -1,0 +1,11 @@
+{
+  "name": "execute-scheduled-tasks",
+  "trigger": "on_schedule_trigger",
+  "action": "prompt",
+  "prompt": "A scheduled task is due for execution. Please do the following:\n1. Use schedule_check_pending to get all pending tasks\n2. For each pending task, read its payload and execute the appropriate action:\n   - If payload contains 'action': 'research', use the research skill\n   - If payload contains 'action': 'monitor', use browse_url to check the target and compare with previous results\n   - If payload contains 'action': 'notify', send a notification via the specified channel\n   - If payload contains 'action': 'chain', execute the referenced task chain\n3. Use schedule_mark_done to mark each task as completed with the result\n4. If notify_on_complete is set, send a summary via the specified channel",
+  "enabled": true,
+  "requires_confirmation": false,
+  "notify_on_complete": true,
+  "notify_channel": "telegram",
+  "description": "Execute pending scheduled tasks, process their payloads, and notify on completion"
+}

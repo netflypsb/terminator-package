@@ -1,0 +1,22 @@
+{
+  "name": "Research Project",
+  "description": "Research-focused workspace optimized for web research, data collection, note-taking, and report generation.",
+  "version": "0.1.0",
+  "servers": {
+    "terminator-memory": true,
+    "terminator-scheduler": false,
+    "terminator-comms": false,
+    "terminator-browser": true,
+    "terminator-data": true,
+    "terminator-files": true,
+    "terminator-system": true
+  },
+  "skills": ["research", "writing", "analysis", "summarize", "coding"],
+  "agents": ["researcher", "writer", "analyst"],
+  "folders": ["sources", "notes", "findings", "reports"],
+  "autonomous": {
+    "enabled": false,
+    "requireConfirmation": ["delete"],
+    "autoApprove": ["read", "write_file", "search", "browse"]
+  }
+}

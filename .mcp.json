@@ -1,0 +1,58 @@
+{
+  "mcpServers": {
+    "terminator-memory": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-memory/dist/index.js"
+      ],
+      "env": {
+        "DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/memory.db"
+      }
+    },
+    "terminator-scheduler": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-scheduler/dist/index.js"
+      ],
+      "env": {
+        "SCHEDULER_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/schedules.db"
+      }
+    },
+    "terminator-comms": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-comms/dist/index.js"
+      ]
+    },
+    "terminator-browser": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-browser/dist/index.js"
+      ],
+      "env": {
+        "BROWSER_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/browser-cache.db"
+      }
+    },
+    "terminator-data": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-data/dist/index.js"
+      ],
+      "env": {
+        "DATA_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/data.db"
+      }
+    },
+    "terminator-files": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-files/dist/index.js"
+      ]
+    },
+    "terminator-system": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-system/dist/index.js"
+      ]
+    }
+  }
+}

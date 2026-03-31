@@ -1,0 +1,52 @@
+{
+  "name": "terminator-package",
+  "displayName": "Terminator — AI Worker",
+  "description": "Transform Claude Code into an autonomous AI knowledge worker with persistent memory, scheduling, communications, web browsing, data processing, and more.",
+  "version": "0.1.0",
+  "author": "netflypsb",
+  "license": "MIT",
+  "repository": "https://github.com/netflypsb/terminator-package",
+  "entryPoints": {
+    "systemPrompt": "CLAUDE.md",
+    "mcpServers": ".mcp.json"
+  },
+  "capabilities": {
+    "mcpServers": [
+      "terminator-memory",
+      "terminator-scheduler",
+      "terminator-comms",
+      "terminator-browser",
+      "terminator-data",
+      "terminator-files",
+      "terminator-system"
+    ],
+    "skills": [
+      "research",
+      "writing",
+      "analysis",
+      "communication",
+      "planning",
+      "automation",
+      "coding",
+      "summarize",
+      "onboarding"
+    ],
+    "agents": [
+      "researcher",
+      "writer",
+      "analyst",
+      "scheduler",
+      "communicator",
+      "supervisor"
+    ]
+  },
+  "install": {
+    "steps": [
+      "pnpm install",
+      "pnpm build",
+      "node installer/dist/install.js"
+    ],
+    "verify": "node installer/dist/doctor.js"
+  },
+  "tags": ["ai-worker", "autonomous", "mcp", "memory", "scheduler", "communications"]
+}
