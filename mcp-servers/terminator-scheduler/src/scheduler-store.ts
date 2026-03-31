@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import { parseExpression } from "cron-parser";
+import { CronExpressionParser } from "cron-parser";
 
 export type TaskStatus = "active" | "paused" | "completed" | "cancelled";
 export type TaskType = "cron" | "once" | "chain";
@@ -89,7 +89,7 @@ export class SchedulerStore {
 
   private computeNextRun(cronExpression: string): string | null {
     try {
-      const interval = parseExpression(cronExpression);
+      const interval = CronExpressionParser.parse(cronExpression);
       return interval.next().toISOString();
     } catch {
       return null;
