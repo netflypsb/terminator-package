@@ -4,16 +4,18 @@ description: Process pending scheduled tasks
 
 # Schedule Trigger Hook
 
-This workflow processes pending scheduled tasks. Invoke with /hooks-schedule.
+This workflow processes pending scheduled tasks. Invoke with /hooks-schedule or let the automatic poller trigger it.
 
 ## Instructions
 
 A scheduled task is due for execution. Please do the following:
-1. Use schedule_check_pending to get all pending tasks
-2. For each pending task, read its payload and execute the appropriate action:
-   - If payload contains 'action': 'research', use the research skill
-   - If payload contains 'action': 'monitor', use browse_url to check the target and compare with previous results
-   - If payload contains 'action': 'notify', send a notification via the specified channel
-   - If payload contains 'action': 'chain', execute the referenced task chain
-3. Use schedule_mark_done to mark each task as completed with the result
-4. If notify_on_complete is set, send a summary via the specified channel
+
+1. Use `schedule_check_pending` to get all pending tasks
+2. For each pending task:
+   - Read the task description carefully
+   - Execute the task by following the description instructions
+   - The task might ask you to: research something, browse a URL, send a notification, run analysis, or any other action
+3. Use `schedule_mark_done` to mark each task as completed with a summary of what was done
+4. If the task has `notify_on_complete` set, send a summary via the specified channel
+
+**Important**: You MUST actually execute the task - just checking that it exists is not enough. The user expects the task to be performed.

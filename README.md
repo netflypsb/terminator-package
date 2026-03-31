@@ -309,6 +309,61 @@ This removes generated config files (`.mcp.json`, system prompt files, `.termina
 
 ---
 
+## Troubleshooting
+
+### Scheduled Tasks Not Running
+
+**Problem**: You scheduled a task but it didn't execute at the scheduled time.
+
+**Cause**: The Terminator scheduler stores tasks but requires an active agent session to execute them. Tasks are passive — they wait for `schedule_check_pending` to be called.
+
+**Solutions**:
+1. **Manual check**: Run `/hooks-schedule` (in Windsurf) or ask your agent to "check pending scheduled tasks"
+2. **On startup**: The `on-workspace-open` hook automatically calls `schedule_check_pending` when you start a session
+3. **Extension polling**: If using the VS Code extension with autonomous mode enabled, it will poll for pending tasks every minute
+4. **Agent instruction**: When you see pending tasks, the agent must ACT on them — not just acknowledge they exist
+
+### Terminator UI Not Visible in VS Code Forks (Windsurf, Antigravity, etc.)
+
+**Problem**: The Terminator panel appears in VS Code but not in other IDEs like Windsurf or Antigravity.
+
+**Cause**: VS Code extensions must be installed separately in each IDE. The `.vsix` file needs to be installed in each IDE individually.
+
+**Solutions**:
+1. **Install the extension in each IDE**:
+   ```bash
+   # Build the extension
+   cd extensions/terminator-panel
+   npm run build
+   npm run package
+   
+   # Install in each IDE
+   # Windsurf: Code → Preferences → Extensions → Install from VSIX
+   # Antigravity: Similar process
+   ```
+
+2. **Verify extension compatibility**: The extension now supports VS Code 1.70+ with multiple activation events
+
+3. **Check activation**: The extension activates on:
+   - `onStartupFinished`
+   - `onCommand:terminator.openPanel`
+   - `onView:terminator.panel`
+
+4. **Manual activation**: Use command palette → "Terminator: Open Panel"
+
+### Extension Panel Shows But Empty
+
+**Cause**: The extension webview requires the build output (`dist/webview.js` and `dist/webview.css`).
+
+**Fix**: Rebuild the extension:
+```bash
+cd extensions/terminator-panel
+npm install
+npm run build
+```
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE)

@@ -5,11 +5,14 @@
   "version": "0.1.0",
   "publisher": "terminator",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.70.0"
   },
-  "categories": ["Other"],
+  "categories": ["Other", "Machine Learning", "Data Science"],
+  "keywords": ["AI", "agent", "automation", "scheduler", "MCP"],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onCommand:terminator.openPanel",
+    "onView:terminator.panel"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -27,40 +30,58 @@
         {
           "type": "webview",
           "id": "terminator.panel",
-          "name": "Terminator"
+          "name": "Terminator",
+          "icon": "media/icon.svg",
+          "when": "true"
         }
       ]
     },
     "commands": [
       {
         "command": "terminator.openPanel",
-        "title": "Terminator: Open Panel"
+        "title": "Open Terminator Panel",
+        "category": "Terminator",
+        "icon": "$(hubot)"
       },
       {
         "command": "terminator.newTask",
-        "title": "Terminator: New Task"
+        "title": "New Task",
+        "category": "Terminator"
       },
       {
         "command": "terminator.checkSchedules",
-        "title": "Terminator: Check Schedules"
+        "title": "Check Schedules",
+        "category": "Terminator"
       },
       {
         "command": "terminator.openCommHub",
-        "title": "Terminator: Open Communication Hub"
+        "title": "Open Communication Hub",
+        "category": "Terminator"
       },
       {
         "command": "terminator.searchMemory",
-        "title": "Terminator: Search Memory"
+        "title": "Search Memory",
+        "category": "Terminator"
       },
       {
         "command": "terminator.toggleAutonomous",
-        "title": "Terminator: Toggle Autonomous Mode"
+        "title": "Toggle Autonomous Mode",
+        "category": "Terminator"
       },
       {
         "command": "terminator.runDoctor",
-        "title": "Terminator: Run Doctor"
+        "title": "Run Doctor",
+        "category": "Terminator"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "terminator.openPanel",
+          "when": "true"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "node build.mjs",
