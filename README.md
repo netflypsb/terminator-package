@@ -4,7 +4,7 @@
 
 Terminator brings the high-powered agentic capabilities of coding IDEs (Windsurf, Cursor, Claude Code, Cline, Codex) to **general knowledge work** — research, writing, data analysis, communications, scheduling, and full autonomous operation with remote control via Telegram, Discord, and Slack.
 
-> **7 MCP servers · 48+ tools · 10 skills · 6 agents · 3 hooks · 3 task chains**
+> **8 MCP servers · 68+ tools · 12 skills · 6 agents · 3 hooks · 3 task chains**
 
 ---
 
@@ -98,6 +98,7 @@ Once installed, your IDE agent becomes **Terminator** — a fully capable autono
 | **Web Browsing** | terminator-browser | 4 | Fetch pages, extract data, search, monitor changes |
 | **Data Processing** | terminator-data | 5 | SQLite queries, CSV read/write, statistics |
 | **File Operations** | terminator-files | 7 | Templates, bulk rename, archives, scaffolding |
+| **Office Documents** | terminator-office | 20+ | Word, Excel, PowerPoint, PDF creation, analysis, conversion |
 | **System Integration** | terminator-system | 7 | Notifications, clipboard, processes, system info |
 
 ### Skills (prompt-based expertise)
@@ -112,6 +113,8 @@ Once installed, your IDE agent becomes **Terminator** — a fully capable autono
 | **automation** | Schedules, hooks, recurring workflows |
 | **coding** | Software development, debugging, testing |
 | **summarize** | Condensing documents, pages, conversations |
+| **office-documents** | Word, Excel, PowerPoint, PDF lifecycle management |
+| **office-automation** | Document workflows, recurring report generation |
 | **onboarding** | Guiding new users through capabilities |
 | **terminator-expert** | Expert knowledge of Terminator setup, config, troubleshooting |
 
