@@ -123,15 +123,34 @@ function stopSchedulePolling() {
 }
 
 function triggerScheduleCheck() {
-  // Send a notification to the webview to trigger schedule check
-  // The webview will communicate with the MCP server
+  // Open a terminal and prompt the AI agent to execute pending scheduled tasks
+  // This uses the execution queue pattern which is more reliable than simple polling
   const terminal = vscode.window.createTerminal("Terminator Scheduler");
   terminal.show();
-  terminal.sendText('echo "Checking for pending scheduled tasks..." && npx -y @anthropic-ai/mcp-check-schedules 2>/dev/null || echo "To enable automatic schedule checking, ensure MCP tools are available"');
-  // Hide terminal after a brief moment
+  
+  // The prompt instructs the agent to use the execution queue workflow
+  const prompt = `🤖 AUTOMATED SCHEDULE CHECK
+
+Please execute the following sequence to process scheduled tasks:
+1. Use schedule_queue_pending to queue any due tasks to the execution queue
+2. Use schedule_get_pending_executions to see what's waiting
+3. Use schedule_claim_execution to claim the next task
+4. EXECUTE the claimed task according to its description
+5. Use schedule_complete_execution to mark it done
+6. Repeat until queue is empty
+
+Also check: schedule_get_missed_executions to catch any overlooked tasks.
+
+⏰ Tasks are waiting in the execution queue and need to be processed now.`;
+
+  terminal.sendText(prompt);
+  
+  // Don't auto-close - the agent needs to see this prompt
+  // But minimize focus theft after a few seconds
   setTimeout(() => {
-    terminal.dispose();
-  }, 100);
+    // Return focus to editor
+    vscode.commands.executeCommand("workbench.action.focusActiveEditorGroup");
+  }, 3000);
 }
 
 export function deactivate() {

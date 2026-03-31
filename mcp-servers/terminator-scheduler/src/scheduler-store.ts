@@ -33,6 +33,28 @@ export interface TaskExecution {
   result: string | null;
 }
 
+export interface ExecutionQueueItem {
+  id: number;
+  task_id: string;
+  task_name: string;
+  task_description: string;
+  scheduled_for: string;
+  queued_at: string;
+  claimed_at: string | null;
+  claimed_by: string | null;
+  completed_at: string | null;
+  status: "pending" | "claimed" | "completed" | "failed" | "missed";
+  result: string | null;
+  retry_count: number;
+}
+
+export interface MissedExecution {
+  task_id: string;
+  task_name: string;
+  scheduled_for: string;
+  missed_by_seconds: number;
+}
+
 export class SchedulerStore {
   private db: Database.Database;
 
@@ -79,7 +101,25 @@ export class SchedulerStore {
 
       CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
       CREATE INDEX IF NOT EXISTS idx_tasks_next_run ON tasks(next_run);
-      CREATE INDEX IF NOT EXISTS idx_executions_task ON task_executions(task_id);
+      CREATE TABLE IF NOT EXISTS execution_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id TEXT NOT NULL,
+        task_name TEXT NOT NULL,
+        task_description TEXT NOT NULL DEFAULT '',
+        scheduled_for TEXT NOT NULL,
+        queued_at TEXT NOT NULL DEFAULT (datetime('now')),
+        claimed_at TEXT,
+        claimed_by TEXT,
+        completed_at TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        result TEXT,
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (task_id) REFERENCES tasks(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_execution_queue_status ON execution_queue(status);
+      CREATE INDEX IF NOT EXISTS idx_execution_queue_task ON execution_queue(task_id);
+      CREATE INDEX IF NOT EXISTS idx_execution_queue_scheduled ON execution_queue(scheduled_for);
     `);
   }
 
@@ -309,6 +349,208 @@ export class SchedulerStore {
       chain_index: row.chain_index,
       created_at: row.created_at,
       updated_at: row.updated_at,
+    };
+  }
+
+  // --- Execution Queue Methods ---
+
+  /**
+   * Check for pending tasks and add them to the execution queue.
+   * This ensures tasks are never missed even if checked late.
+   */
+  queuePendingExecutions(): ExecutionQueueItem[] {
+    const now = new Date().toISOString();
+    const pending = this.checkPending();
+    const queued: ExecutionQueueItem[] = [];
+
+    for (const task of pending) {
+      // Check if this task already has a pending execution in the queue
+      const existing = this.db
+        .prepare(
+          "SELECT * FROM execution_queue WHERE task_id = ? AND status IN ('pending', 'claimed')"
+        )
+        .get(task.id) as any;
+
+      if (!existing) {
+        // Add to execution queue
+        const result = this.db
+          .prepare(
+            `INSERT INTO execution_queue (task_id, task_name, task_description, scheduled_for, status)
+             VALUES (?, ?, ?, ?, 'pending')`
+          )
+          .run(task.id, task.name, task.description, task.next_run);
+
+        const queuedItem = this.getExecutionQueueItem(Number(result.lastInsertRowid));
+        if (queuedItem) queued.push(queuedItem);
+      }
+    }
+
+    return queued;
+  }
+
+  /**
+   * Get the next pending execution from the queue (FIFO order by scheduled time).
+   */
+  claimNextExecution(claimedBy: string = "agent"): ExecutionQueueItem | null {
+    const now = new Date().toISOString();
+
+    // Find the oldest pending execution
+    const pending = this.db
+      .prepare(
+        `SELECT * FROM execution_queue 
+         WHERE status = 'pending'
+         ORDER BY scheduled_for ASC
+         LIMIT 1`
+      )
+      .get() as any;
+
+    if (!pending) return null;
+
+    // Claim it
+    this.db
+      .prepare(
+        `UPDATE execution_queue 
+         SET status = 'claimed', claimed_at = ?, claimed_by = ?
+         WHERE id = ? AND status = 'pending'`
+      )
+      .run(now, claimedBy, pending.id);
+
+    return this.getExecutionQueueItem(pending.id);
+  }
+
+  /**
+   * Complete an execution and update the task.
+   */
+  completeExecution(
+    executionId: number,
+    result?: string,
+    status: "completed" | "failed" = "completed"
+  ): ExecutionQueueItem | null {
+    const now = new Date().toISOString();
+
+    const execution = this.getExecutionQueueItem(executionId);
+    if (!execution) return null;
+
+    // Update execution record
+    this.db
+      .prepare(
+        `UPDATE execution_queue 
+         SET status = ?, completed_at = ?, result = ?
+         WHERE id = ?`
+      )
+      .run(status, now, result ?? null, executionId);
+
+    // Update the task (mark as executed)
+    if (status === "completed") {
+      this.markExecuted(execution.task_id, result);
+    }
+
+    return this.getExecutionQueueItem(executionId);
+  }
+
+  /**
+   * Get all pending executions from the queue.
+   */
+  getPendingExecutions(): ExecutionQueueItem[] {
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM execution_queue 
+         WHERE status = 'pending'
+         ORDER BY scheduled_for ASC`
+      )
+      .all();
+
+    return rows.map((r: any) => this.rowToExecutionQueueItem(r));
+  }
+
+  /**
+   * Get executions that were missed (scheduled time passed but still pending).
+   */
+  getMissedExecutions(thresholdMinutes: number = 5): MissedExecution[] {
+    const now = new Date().toISOString();
+
+    const rows = this.db
+      .prepare(
+        `SELECT 
+          eq.task_id,
+          eq.task_name,
+          eq.scheduled_for,
+          (julianday(?) - julianday(eq.scheduled_for)) * 24 * 60 * 60 as missed_by_seconds
+         FROM execution_queue eq
+         WHERE eq.status = 'pending'
+         AND eq.scheduled_for < datetime(?, '-? minutes')
+         ORDER BY eq.scheduled_for ASC`
+      )
+      .all(now, now, thresholdMinutes) as any[];
+
+    return rows.map((r) => ({
+      task_id: r.task_id,
+      task_name: r.task_name,
+      scheduled_for: r.scheduled_for,
+      missed_by_seconds: Math.floor(r.missed_by_seconds),
+    }));
+  }
+
+  /**
+   * Mark old pending executions as 'missed' so they can be handled differently.
+   */
+  markStaleExecutionsAsMissed(thresholdMinutes: number = 30): number {
+    const now = new Date().toISOString();
+
+    const result = this.db
+      .prepare(
+        `UPDATE execution_queue 
+         SET status = 'missed'
+         WHERE status = 'pending'
+         AND scheduled_for < datetime(?, '-? minutes')`
+      )
+      .run(now, thresholdMinutes);
+
+    return result.changes;
+  }
+
+  /**
+   * Get a specific execution queue item by ID.
+   */
+  getExecutionQueueItem(id: number): ExecutionQueueItem | null {
+    const row = this.db
+      .prepare("SELECT * FROM execution_queue WHERE id = ?")
+      .get(id) as any;
+
+    return row ? this.rowToExecutionQueueItem(row) : null;
+  }
+
+  /**
+   * Retry a missed or failed execution.
+   */
+  retryExecution(executionId: number): ExecutionQueueItem | null {
+    const now = new Date().toISOString();
+
+    this.db
+      .prepare(
+        `UPDATE execution_queue 
+         SET status = 'pending', retry_count = retry_count + 1, claimed_at = NULL, claimed_by = NULL
+         WHERE id = ? AND status IN ('missed', 'failed')`
+      )
+      .run(executionId);
+
+    return this.getExecutionQueueItem(executionId);
+  }
+
+  private rowToExecutionQueueItem(row: any): ExecutionQueueItem {
+    return {
+      id: row.id,
+      task_id: row.task_id,
+      task_name: row.task_name,
+      task_description: row.task_description,
+      scheduled_for: row.scheduled_for,
+      queued_at: row.queued_at,
+      claimed_at: row.claimed_at,
+      claimed_by: row.claimed_by,
+      completed_at: row.completed_at,
+      status: row.status,
+      result: row.result,
+      retry_count: row.retry_count,
     };
   }
 

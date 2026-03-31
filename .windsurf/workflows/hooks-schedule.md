@@ -8,14 +8,18 @@ This workflow processes pending scheduled tasks. Invoke with /hooks-schedule or 
 
 ## Instructions
 
-A scheduled task is due for execution. Please do the following:
+Scheduled tasks need to be executed. Please do the following:
 
-1. Use `schedule_check_pending` to get all pending tasks
-2. For each pending task:
-   - Read the task description carefully
-   - Execute the task by following the description instructions
-   - The task might ask you to: research something, browse a URL, send a notification, run analysis, or any other action
-3. Use `schedule_mark_done` to mark each task as completed with a summary of what was done
-4. If the task has `notify_on_complete` set, send a summary via the specified channel
+1. Use `schedule_queue_pending` to ensure all due tasks are in the execution queue (catches missed/overdue tasks)
+2. Use `schedule_get_pending_executions` to see the queue
+3. Use `schedule_get_missed_executions` to check for overlooked tasks
+4. While there are pending executions:
+   - Call `schedule_claim_execution` to claim the next task
+   - **READ** the task description carefully
+   - **EXECUTE** the task (research, browse, notify, run analysis, etc.)
+   - Call `schedule_complete_execution` with the result
+5. If any executions failed, use `schedule_claim_execution` again with `status: "failed"` and consider retrying
 
-**Important**: You MUST actually execute the task - just checking that it exists is not enough. The user expects the task to be performed.
+**Important**: You MUST actually execute each task - just acknowledging it exists is not enough. The user expects the work to be performed.
+
+**About the Execution Queue**: This system ensures tasks are never missed. Even if you're late or the system was down, `schedule_queue_pending` will catch overdue tasks and add them. You then work through the queue by claiming and completing each execution.

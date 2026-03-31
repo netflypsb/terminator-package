@@ -263,7 +263,7 @@ server.tool(
 // --- Tool: schedule_mark_done ---
 server.tool(
   "schedule_mark_done",
-  "Mark a pending task as executed. For cron tasks, this advances to the next scheduled run. For chains, it advances to the next step. For one-shot tasks, it marks them as completed.",
+  "Mark a pending task as executed. For cron tasks, this advances to the next scheduled run. For chains, it advances to the next step. For one-shot tasks, it marks them as completed. NOTE: For execution queue tasks, use schedule_complete_execution instead.",
   {
     task_id: z.string().describe("The task ID to mark as done"),
     result: z
@@ -290,6 +290,167 @@ server.tool(
 
     return {
       content: [{ type: "text" as const, text: msg }],
+    };
+  }
+);
+
+// --- Tool: schedule_queue_pending ---
+server.tool(
+  "schedule_queue_pending",
+  "Check for pending tasks and add them to the execution queue. This ensures tasks are never missed even if checked late. Call this periodically or when you suspect tasks may be due. Returns the list of newly queued executions.",
+  {},
+  async () => {
+    const queued = store.queuePendingExecutions();
+
+    if (queued.length === 0) {
+      return {
+        content: [{ type: "text" as const, text: "No new pending tasks to queue. All caught up!" }],
+      };
+    }
+
+    const formatted = queued
+      .map((e) => `**${e.task_name}** (Execution #${e.id})\n  Scheduled: ${e.scheduled_for}\n  ${e.task_description.substring(0, 100)}${e.task_description.length > 100 ? "..." : ""}`)
+      .join("\n\n");
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${queued.length} task(s) added to execution queue:\n\n${formatted}\n\nUse schedule_claim_execution to start processing the next task.`,
+        },
+      ],
+    };
+  }
+);
+
+// --- Tool: schedule_get_pending_executions ---
+server.tool(
+  "schedule_get_pending_executions",
+  "Get all pending executions from the queue. These are tasks that are due and waiting to be executed. Check this at session start and periodically.",
+  {},
+  async () => {
+    const pending = store.getPendingExecutions();
+
+    if (pending.length === 0) {
+      return {
+        content: [{ type: "text" as const, text: "No pending executions in queue." }],
+      };
+    }
+
+    const formatted = pending
+      .map((e) => `**${e.task_name}** (Execution #${e.id})\n  Scheduled: ${e.scheduled_for}\n  Status: ${e.status}${e.retry_count > 0 ? ` (Retry #${e.retry_count})` : ""}`)
+      .join("\n\n");
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${pending.length} pending execution(s):\n\n${formatted}\n\nUse schedule_claim_execution to start processing.`,
+        },
+      ],
+    };
+  }
+);
+
+// --- Tool: schedule_claim_execution ---
+server.tool(
+  "schedule_claim_execution",
+  "Claim the next pending execution from the queue. This marks it as 'claimed' so you can work on it. Returns the execution details including task name, description, and ID. You MUST execute the task description, then call schedule_complete_execution when done.",
+  {
+    agent_id: z
+      .string()
+      .optional()
+      .describe("Optional identifier for the agent claiming this execution"),
+  },
+  async ({ agent_id }) => {
+    const execution = store.claimNextExecution(agent_id || "agent");
+
+    if (!execution) {
+      return {
+        content: [{ type: "text" as const, text: "No pending executions available in the queue." }],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `**Claimed Execution #${execution.id}**: ${execution.task_name}\n\n**Scheduled for**: ${execution.scheduled_for}\n**Status**: ${execution.status}\n\n**Task Description** (EXECUTE THIS):\n${execution.task_description}\n\nWhen finished, call:\n\`schedule_complete_execution\` with execution_id: ${execution.id}`,
+        },
+      ],
+    };
+  }
+);
+
+// --- Tool: schedule_complete_execution ---
+server.tool(
+  "schedule_complete_execution",
+  "Complete an execution from the queue. This marks the execution as completed and updates the task (advances cron, chain, or marks one-shot as done). Always call this after executing a claimed task.",
+  {
+    execution_id: z.number().describe("The execution ID (from schedule_claim_execution)"),
+    result: z
+      .string()
+      .optional()
+      .describe("Summary of what was accomplished"),
+    status: z
+      .enum(["completed", "failed"])
+      .optional()
+      .describe("Completion status (default: completed)"),
+  },
+  async ({ execution_id, result, status }) => {
+    const execution = store.completeExecution(
+      execution_id,
+      result,
+      status || "completed"
+    );
+
+    if (!execution) {
+      return {
+        content: [{ type: "text" as const, text: `Execution #${execution_id} not found.` }],
+        isError: true,
+      };
+    }
+
+    const msg = status === "failed"
+      ? `Execution #${execution_id} marked as FAILED. Task "${execution.task_name}" will need to be retried.`
+      : `Execution #${execution_id} completed successfully. Task "${execution.task_name}" updated (runs: ${execution.task_id}).`;
+
+    return {
+      content: [{ type: "text" as const, text: msg }],
+    };
+  }
+);
+
+// --- Tool: schedule_get_missed_executions ---
+server.tool(
+  "schedule_get_missed_executions",
+  "Get executions that were missed - scheduled time has passed but they weren't executed. These are tasks that may have been overlooked. You should check for these regularly.",
+  {
+    threshold_minutes: z
+      .number()
+      .optional()
+      .describe("How many minutes past scheduled time constitutes 'missed' (default: 5)"),
+  },
+  async ({ threshold_minutes }) => {
+    const missed = store.getMissedExecutions(threshold_minutes ?? 5);
+
+    if (missed.length === 0) {
+      return {
+        content: [{ type: "text" as const, text: "No missed executions found." }],
+      };
+    }
+
+    const formatted = missed
+      .map((m) => `**${m.task_name}**\n  Scheduled: ${m.scheduled_for}\n  Missed by: ${Math.floor(m.missed_by_seconds / 60)} minutes`)
+      .join("\n\n");
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${missed.length} MISSED execution(s):\n\n${formatted}\n\nThese tasks were scheduled but not executed on time. Use schedule_queue_pending to add them to the queue, then claim and execute them.`,
+        },
+      ],
     };
   }
 );

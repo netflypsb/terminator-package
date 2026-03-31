@@ -11,14 +11,13 @@ This workflow runs on workspace open. It is generated from hooks.
 Session started. Please do the following:
 
 1. Use `memory_context` to load relevant background for this workspace
-2. **IMPORTANT**: Use `schedule_check_pending` to find any tasks that are due
-3. If there are pending tasks, you MUST execute them immediately:
-   - Read each task description
-   - Execute the task as instructed
-   - Use `schedule_mark_done` to mark each task as completed
-4. Briefly greet the user and summarize:
-   - Any pending items found and executed
-   - Recent activity or status
-   - Whether autonomous mode is enabled
+2. **CRITICAL**: Use `schedule_queue_pending` to queue any due tasks to the execution queue
+3. Use `schedule_get_pending_executions` to see what tasks are waiting
+4. For each pending execution:
+   - Use `schedule_claim_execution` to claim it
+   - **EXECUTE** the task description (research, browse, notify, etc.)
+   - Use `schedule_complete_execution` to mark it done
+5. Check `schedule_get_missed_executions` to catch any overlooked tasks
+6. Briefly greet the user and summarize what was executed
 
-**Note on Scheduled Tasks**: The scheduler stores tasks but requires an active agent to execute them. You are that agent. When a task's time comes due, it appears in `schedule_check_pending` - you must act on it.
+**Why this matters**: The execution queue ensures tasks are NEVER missed. Even if you're late, queue_pending will catch overdue tasks and add them to the queue. You then claim and execute them. This is far more reliable than simple polling.
