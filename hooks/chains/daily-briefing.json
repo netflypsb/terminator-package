@@ -1,0 +1,40 @@
+{
+  "chain": "daily-briefing",
+  "description": "Morning briefing: check emails, review monitored sites, compile and send summary",
+  "steps": [
+    {
+      "action": "check_email",
+      "skill": "communication",
+      "prompt": "Use email_read (if configured) to check for new emails. Summarize any important messages. If email is not configured, skip this step.",
+      "on_failure": "skip"
+    },
+    {
+      "action": "check_pending_tasks",
+      "skill": "automation",
+      "prompt": "Use schedule_check_pending to find any tasks due today. List them with their status and priority.",
+      "on_failure": "skip"
+    },
+    {
+      "action": "check_monitored_sites",
+      "skill": "research",
+      "prompt": "Check memory for any sites being monitored (tag: monitor). For each, use browse_url to fetch current content and compare with the stored version. Note any changes.",
+      "on_failure": "skip"
+    },
+    {
+      "action": "compile_briefing",
+      "skill": "summarize",
+      "prompt": "Compile all findings from the previous steps into a concise daily briefing. Format:\n\n## Daily Briefing — [Date]\n\n### Emails\n[summary or 'No new emails']\n\n### Pending Tasks\n[list or 'No pending tasks']\n\n### Site Changes\n[changes or 'No changes detected']\n\n### Action Items\n[any items requiring attention]"
+    },
+    {
+      "action": "send_briefing",
+      "skill": "communication",
+      "channel": "telegram",
+      "prompt": "Send the compiled briefing via the configured notification channel. Keep it concise for mobile reading.",
+      "on_failure": "skip"
+    }
+  ],
+  "schedule": "0 8 * * *",
+  "enabled": true,
+  "notify_on_complete": false,
+  "tags": ["briefing", "daily", "automation"]
+}

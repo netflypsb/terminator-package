@@ -6,6 +6,7 @@ import { detectIDE } from "./detect-ide.js";
 import { configureMcp } from "./configure-mcp.js";
 import { configurePrompts } from "./configure-prompts.js";
 import { configureSkills } from "./configure-skills.js";
+import { configureHooks } from "./configure-hooks.js";
 
 const BANNER = `
 ╔══════════════════════════════════════════════╗
@@ -171,7 +172,15 @@ async function main() {
     log(`  IDE locations: ${skillResult.targetDirs.map((d) => path.relative(workspacePath, d)).join(", ")}`);
   }
 
-  // Step 8: Set up .env file
+  // Step 8: Install hooks
+  const hookResult = configureHooks(workspacePath, detection.ide);
+  if (hookResult.hooksLoaded > 0) {
+    logSuccess(`Hooks installed: ${hookResult.hooksRegistered} hooks via ${hookResult.method}`);
+  } else {
+    log("No hooks found (hooks/ directory empty)");
+  }
+
+  // Step 9: Set up .env file
   setupEnvFile(workspacePath);
 
   // Done

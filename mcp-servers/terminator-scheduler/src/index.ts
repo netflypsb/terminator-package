@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { SchedulerStore } from "./scheduler-store.js";
 import path from "path";
+import fs from "fs";
 
 const DB_PATH =
   process.env.SCHEDULER_DB_PATH ||
@@ -330,6 +331,144 @@ server.tool(
           text: `Execution history (${history.length} entries):\n\n${formatted}`,
         },
       ],
+    };
+  }
+);
+
+// --- Tool: schedule_chain_load ---
+server.tool(
+  "schedule_chain_load",
+  "Load a task chain from a JSON definition file and create a scheduled chain task from it. Chain files are stored in hooks/chains/ and define multi-step workflows. Each step has an action, skill, and prompt. The chain can optionally be scheduled with a cron expression.",
+  {
+    chain_file: z
+      .string()
+      .describe("Path to the chain JSON file (relative to workspace root, e.g. 'hooks/chains/daily-briefing.json')"),
+    enable_schedule: z
+      .boolean()
+      .optional()
+      .describe("If true and the chain has a 'schedule' field, create it as a recurring cron task. Default: false (creates as immediate chain)."),
+  },
+  async ({ chain_file, enable_schedule }) => {
+    try {
+      const filePath = path.isAbsolute(chain_file)
+        ? chain_file
+        : path.join(process.cwd(), chain_file);
+
+      if (!fs.existsSync(filePath)) {
+        return {
+          content: [{ type: "text" as const, text: `Chain file not found: ${chain_file}` }],
+          isError: true,
+        };
+      }
+
+      const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      if (!raw.chain || !Array.isArray(raw.steps) || raw.steps.length === 0) {
+        return {
+          content: [{ type: "text" as const, text: `Invalid chain file: must have 'chain' and 'steps' fields.` }],
+          isError: true,
+        };
+      }
+
+      if (raw.enabled === false) {
+        return {
+          content: [{ type: "text" as const, text: `Chain "${raw.chain}" is disabled. Set "enabled": true to use it.` }],
+        };
+      }
+
+      // Extract step prompts/descriptions for the chain_tasks array
+      const stepDescriptions: string[] = raw.steps.map((step: any, i: number) => {
+        const parts: string[] = [];
+        parts.push(`Step ${i + 1}: ${step.action}`);
+        if (step.skill) parts.push(`[skill: ${step.skill}]`);
+        if (step.channel) parts.push(`[channel: ${step.channel}]`);
+        if (step.prompt) parts.push(`\nInstructions: ${step.prompt}`);
+        if (step.on_failure) parts.push(`\nOn failure: ${step.on_failure}`);
+        return parts.join(" ");
+      });
+
+      // Determine task type and scheduling
+      const useCron = enable_schedule && raw.schedule;
+
+      const task = store.createTask({
+        name: raw.chain,
+        type: useCron ? "cron" : "chain",
+        description: raw.description || `Task chain: ${raw.chain}`,
+        cron_expression: useCron ? raw.schedule : undefined,
+        chain_tasks: stepDescriptions,
+      });
+
+      let msg = `Chain "${raw.chain}" loaded with ${stepDescriptions.length} steps (task ID: ${task.id}).`;
+      if (useCron) {
+        msg += `\nScheduled with cron: ${raw.schedule}`;
+      }
+      if (task.next_run) {
+        msg += `\nNext run: ${task.next_run}`;
+      }
+
+      return {
+        content: [{ type: "text" as const, text: msg }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{ type: "text" as const, text: `Failed to load chain: ${err.message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+// --- Tool: schedule_chain_status ---
+server.tool(
+  "schedule_chain_status",
+  "Get the current execution status of a chain task, showing which step is next, which are completed, and the overall progress.",
+  {
+    task_id: z.string().describe("The chain task ID"),
+  },
+  async ({ task_id }) => {
+    const task = store.getTask(task_id);
+    if (!task) {
+      return {
+        content: [{ type: "text" as const, text: `No task found with ID "${task_id}".` }],
+      };
+    }
+
+    if (task.type !== "chain" || !task.chain_tasks) {
+      return {
+        content: [{ type: "text" as const, text: `Task "${task_id}" is not a chain task.` }],
+      };
+    }
+
+    const steps: string[] = JSON.parse(task.chain_tasks);
+    const total = steps.length;
+    const current = task.chain_index;
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+
+    const lines = [
+      `**Chain: ${task.name}** (${task.id})`,
+      `Status: ${task.status} | Progress: ${current}/${total} steps (${pct}%)`,
+      `Runs: ${task.run_count} | Last run: ${task.last_run || "never"}`,
+      "",
+      "Steps:",
+    ];
+
+    steps.forEach((step, i) => {
+      let marker: string;
+      if (i < current) marker = "✓";
+      else if (i === current) marker = "→";
+      else marker = "○";
+      // Truncate long step descriptions for the overview
+      const shortStep = step.length > 120 ? step.substring(0, 117) + "..." : step;
+      lines.push(`  ${marker} ${shortStep}`);
+    });
+
+    if (task.status === "completed") {
+      lines.push("", "Chain completed.");
+    } else if (current < total) {
+      lines.push("", `Next action: ${steps[current]}`);
+    }
+
+    return {
+      content: [{ type: "text" as const, text: lines.join("\n") }],
     };
   }
 );

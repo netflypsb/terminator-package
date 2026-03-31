@@ -1,0 +1,12 @@
+{
+  "name": "process-incoming-messages",
+  "trigger": "on_message_received",
+  "action": "prompt",
+  "prompt": "An incoming message has been received on a communication channel. Please do the following:\n1. Read the message content and determine if it contains a command:\n   - /status — report current task status using schedule_list\n   - /tasks — list all scheduled and active tasks\n   - /do <instruction> — execute the instruction using appropriate skills\n   - /pause — pause all active scheduled tasks\n   - /resume — resume paused scheduled tasks\n   - /memory <query> — search memory and return results\n2. If it's a command, execute it and send the response back via the same channel\n3. If it's a regular message, store it in memory and acknowledge receipt\n4. Log the interaction in memory for continuity",
+  "enabled": true,
+  "requires_confirmation": true,
+  "conditions": {
+    "channels": ["telegram", "discord", "slack"]
+  },
+  "description": "Process incoming messages from communication channels, handle commands, and respond"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "check-schedules-on-open",
+  "trigger": "on_workspace_open",
+  "action": "prompt",
+  "prompt": "Session started. Please do the following:\n1. Use memory_context to load relevant background for this workspace\n2. Use schedule_check_pending to find any tasks that are due\n3. If there are pending tasks, process them and report what was done\n4. Briefly greet the user and summarize any pending items or recent activity",
+  "enabled": true,
+  "requires_confirmation": false,
+  "description": "On workspace open: load context from memory, check for pending scheduled tasks, and greet the user with a status summary"
+}

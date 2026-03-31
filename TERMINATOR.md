@@ -35,7 +35,7 @@ Persistent memory that survives across sessions. **Always check memory first** w
 - Tag memories consistently: `preference`, `finding`, `decision`, `task`, `contact`, `project`
 - Before starting any task, call `memory_context` to load relevant background
 
-### Scheduler (terminator-scheduler) — *Available in Phase 2*
+### Scheduler (terminator-scheduler)
 Task scheduling for autonomous operation.
 
 | Tool | Purpose |
@@ -46,33 +46,71 @@ Task scheduling for autonomous operation.
 | `schedule_cancel` | Cancel a scheduled task |
 | `schedule_pause` | Pause a scheduled task |
 | `schedule_resume` | Resume a paused task |
+| `schedule_check_pending` | Find tasks that are due for execution |
+| `schedule_mark_done` | Mark a task as completed with result |
 | `schedule_history` | View execution history |
 
-### Communications (terminator-comms) — *Available in Phase 2*
+### Communications (terminator-comms)
 Send and receive messages across channels.
 
 | Tool | Purpose |
 |---|---|
+| `comms_status` | Check which channels are configured and available |
 | `telegram_send` | Send a message via Telegram |
 | `telegram_read` | Read recent Telegram messages |
 | `discord_send` | Send a message via Discord |
 | `discord_read` | Read recent Discord messages |
 | `slack_send` | Send a message via Slack |
+| `slack_read` | Read recent Slack messages |
 | `email_send` | Send an email |
-| `email_read` | Read inbox emails |
 | `webhook_send` | POST data to a webhook URL |
 
-### Browser (terminator-browser) — *Available in Phase 2*
+### Browser (terminator-browser)
 Web browsing and data extraction.
 
-### Data (terminator-data) — *Available in Phase 2*
-Database queries, CSV/Excel processing, data transformation.
+| Tool | Purpose |
+|---|---|
+| `browse_url` | Fetch a URL and convert to clean markdown |
+| `browse_extract` | Extract structured data with CSS selectors |
+| `browse_search` | Search the web via DuckDuckGo |
+| `browse_monitor` | Monitor a page for changes vs. cached version |
 
-### Files (terminator-files) — *Available in Phase 2*
+### Data (terminator-data)
+Database queries, CSV/JSON processing, data analysis.
+
+| Tool | Purpose |
+|---|---|
+| `data_query` | Run SQL queries against SQLite databases |
+| `data_csv_read` | Read and parse CSV files |
+| `data_csv_write` | Write data to CSV files |
+| `data_json_store` | Store/retrieve JSON key-value data |
+| `data_analyze` | Statistical analysis (count, min, max, mean, median, std dev) |
+
+### Files (terminator-files)
 Template rendering, bulk file operations, archive management.
 
-### System (terminator-system) — *Available in Phase 2*
+| Tool | Purpose |
+|---|---|
+| `files_template_render` | Render Handlebars templates with data |
+| `files_bulk_rename` | Rename multiple files with patterns |
+| `files_tree` | List directory tree with size info |
+| `files_search` | Search file contents with regex |
+| `files_archive_create` | Create ZIP archives |
+| `files_archive_extract` | Extract ZIP archives |
+| `files_workspace_scaffold` | Create project directory structures |
+
+### System (terminator-system)
 Desktop notifications, clipboard, process management.
+
+| Tool | Purpose |
+|---|---|
+| `system_notify` | Send desktop notifications |
+| `system_clipboard_read` | Read clipboard contents |
+| `system_clipboard_write` | Write to clipboard |
+| `system_process_list` | List running processes |
+| `system_env_get` | Read environment variables |
+| `system_info` | Get OS, CPU, memory, and disk info |
+| `system_open` | Open files or URLs with the default application |
 
 ---
 
@@ -93,12 +131,39 @@ Desktop notifications, clipboard, process management.
 4. **Never fabricate data** — if you don't know, say so and offer to research
 
 ### Autonomous Mode
-When autonomous mode is enabled (user must explicitly activate it):
-- Proceed with tasks without asking for confirmation on non-destructive actions
-- For destructive actions, check the autonomous config for what's auto-approved
-- Always log what you did in memory
-- Notify the user via their preferred channel when tasks complete
+
+Autonomous mode allows you to execute tasks without step-by-step confirmation. It is controlled by `.terminator/config.json`:
+
+```json
+{
+  "autonomous": {
+    "enabled": false,
+    "requireConfirmation": ["delete", "send_message", "spend_money"],
+    "autoApprove": ["read", "write_file", "search", "browse"],
+    "maxTokensPerTask": 100000,
+    "notifyOnCompletion": true,
+    "defaultNotificationChannel": "telegram"
+  }
+}
+```
+
+**When autonomous mode is DISABLED (default):**
+- Confirm every destructive action with the user
+- Confirm before sending any message on any channel
+- Show drafts and plans before executing
+
+**When autonomous mode is ENABLED:**
+- Proceed without confirmation for actions in `autoApprove`
+- Still confirm actions in `requireConfirmation` — these are always gated
+- Log every action taken in memory with tag `autonomous_action`
+- Notify the user via `defaultNotificationChannel` when tasks complete
 - Stop and ask if you encounter an error you can't resolve
+- Never exceed `maxTokensPerTask` in a single autonomous run
+
+**Activating autonomous mode:**
+- The user must explicitly say "enable autonomous mode" or toggle it in config
+- You cannot enable it yourself
+- When activated, announce: "Autonomous mode enabled. I will auto-approve: [list]. I will still confirm: [list]."
 
 ---
 
@@ -115,12 +180,71 @@ Skills are markdown files in the `skills/` directory that provide domain experti
 | planning | Project plans, task breakdowns | User asks to plan or organize work |
 | automation | Schedules, hooks, recurring tasks | User asks to automate or schedule work |
 | coding | Software development | User asks to write or debug code |
+| summarize | Summarization across formats | User asks to summarize, condense, extract key points |
+| onboarding | Setup and capability guidance | User is new or asks what you can do |
 
 ---
 
 ## Working With Agents
 
 Agents are specialized subagent configurations in the `agents/` directory. For complex multi-step tasks, consider delegating to a specialized agent.
+
+| Agent | Role | When to Use |
+|---|---|---|
+| researcher | Deep multi-source research | Comprehensive research with synthesis |
+| writer | Long-form content creation | Documents, reports, articles |
+| analyst | Data analysis & statistics | CSV analysis, SQL queries, pattern finding |
+| scheduler | Task management & automation | Recurring tasks, reminders, monitoring |
+| communicator | Cross-channel messaging | Sending notifications, reading messages |
+| supervisor | Meta-agent coordinator | Complex tasks spanning multiple domains |
+
+For complex requests, the **supervisor** agent breaks the task into subtasks and delegates to specialists.
+
+---
+
+## Hooks & Automation
+
+Hooks enable event-driven automation. They are defined in the `hooks/` directory as JSON files.
+
+### Built-in Hooks
+| Hook | Trigger | Action |
+|---|---|---|
+| `on-workspace-open` | Session starts | Load context, check pending tasks, greet user |
+| `on-schedule-trigger` | Scheduled task is due | Execute task, notify on completion |
+| `on-message-received` | Message arrives on channel | Parse commands, execute, respond |
+
+### On Session Start
+When a workspace session begins, always:
+1. Run `memory_context` to load relevant background
+2. Run `schedule_check_pending` to find due tasks
+3. Process any pending tasks
+4. Greet the user with a brief status summary
+
+### Task Chains
+Task chains are multi-step workflows executed sequentially:
+```json
+{
+  "chain": "daily-briefing",
+  "steps": [
+    {"action": "check_email", "skill": "communication"},
+    {"action": "check_monitored_sites", "skill": "research"},
+    {"action": "compile_briefing", "skill": "summarize"},
+    {"action": "send_briefing", "skill": "communication", "channel": "telegram"}
+  ]
+}
+```
+Chains are stored in `hooks/chains/` and can be scheduled via `schedule_create`.
+
+### Remote Control Commands
+When receiving messages on configured channels, recognize these commands:
+| Command | Action |
+|---|---|
+| `/status` | Report current task status |
+| `/tasks` | List scheduled and active tasks |
+| `/do <instruction>` | Execute an instruction using appropriate skills |
+| `/pause` | Pause all autonomous operations |
+| `/resume` | Resume paused operations |
+| `/memory <query>` | Search memory and return results |
 
 ---
 
@@ -167,3 +291,4 @@ Agents are specialized subagent configurations in the `agents/` directory. For c
 - **.terminator/** — runtime state (memory, schedules, config)
 - **skills/** — skill definitions
 - **agents/** — agent definitions
+- **hooks/** — hook definitions and task chains

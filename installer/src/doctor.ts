@@ -159,7 +159,27 @@ function main() {
       : undefined
   );
 
-  // 10b. Skills index
+  // 10b. Hooks
+  const hooksDir = path.join(workspacePath, "hooks");
+  const hookFiles = fs.existsSync(hooksDir)
+    ? fs.readdirSync(hooksDir).filter((f) => f.endsWith(".json") && f !== "hook-schema.json")
+    : [];
+  check(`Hooks defined: ${hookFiles.length}`, hookFiles.length > 0, "No hook files found in hooks/");
+
+  // 10c. Task chains
+  const chainsDir = path.join(workspacePath, "hooks", "chains");
+  const chainFiles = fs.existsSync(chainsDir)
+    ? fs.readdirSync(chainsDir).filter((f) => f.endsWith(".json") && f !== "chain-schema.json")
+    : [];
+  check(`Task chains defined: ${chainFiles.length}`, chainFiles.length > 0, "No chain files found in hooks/chains/");
+
+  // 10d. Hooks registry
+  check(
+    "Hooks registry exists (.terminator/hooks-registry.json)",
+    fs.existsSync(path.join(workspacePath, ".terminator", "hooks-registry.json"))
+  );
+
+  // 10e. Skills index
   check(
     "Skills index exists (.terminator/skills-index.json)",
     fs.existsSync(path.join(workspacePath, ".terminator", "skills-index.json"))
