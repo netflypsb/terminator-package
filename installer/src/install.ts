@@ -86,15 +86,28 @@ function setupEnvFile(workspacePath: string): void {
   }
 }
 
-function verifyMcpServerBuilt(workspacePath: string): boolean {
-  const memoryDist = path.join(
-    workspacePath,
-    "mcp-servers",
-    "terminator-memory",
-    "dist",
-    "index.js"
-  );
-  return fs.existsSync(memoryDist);
+const MCP_SERVERS = [
+  "terminator-memory",
+  "terminator-scheduler",
+  "terminator-comms",
+  "terminator-browser",
+  "terminator-data",
+  "terminator-files",
+  "terminator-system",
+];
+
+function verifyMcpServersBuilt(workspacePath: string): { built: string[]; missing: string[] } {
+  const built: string[] = [];
+  const missing: string[] = [];
+  for (const name of MCP_SERVERS) {
+    const dist = path.join(workspacePath, "mcp-servers", name, "dist", "index.js");
+    if (fs.existsSync(dist)) {
+      built.push(name);
+    } else {
+      missing.push(name);
+    }
+  }
+  return { built, missing };
 }
 
 async function main() {
@@ -113,14 +126,16 @@ async function main() {
   }
   logSuccess("Found TERMINATOR.md");
 
-  // Step 2: Check MCP server is built
-  if (!verifyMcpServerBuilt(workspacePath)) {
-    logError(
-      "terminator-memory MCP server not built. Run 'pnpm build' first."
-    );
+  // Step 2: Check MCP servers are built
+  const { built, missing } = verifyMcpServersBuilt(workspacePath);
+  if (built.length === 0) {
+    logError("No MCP servers built. Run 'pnpm build' first.");
     process.exit(1);
   }
-  logSuccess("terminator-memory MCP server is built");
+  logSuccess(`${built.length}/${MCP_SERVERS.length} MCP servers built: ${built.join(", ")}`);
+  if (missing.length > 0) {
+    logWarn(`Missing builds: ${missing.join(", ")} — run 'pnpm build' to build all`);
+  }
 
   // Step 3: Detect IDE
   const detection = detectIDE(workspacePath);

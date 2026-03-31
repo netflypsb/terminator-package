@@ -22,6 +22,11 @@ function buildMcpConfig(workspacePath: string): McpConfig {
     .join(workspacePath, ".terminator", "memory.db")
     .replace(/\\/g, "/");
 
+  const serverPath = (name: string) =>
+    path.join(workspacePath, "mcp-servers", name, "dist", "index.js").replace(/\\/g, "/");
+
+  const terminatorDir = path.join(workspacePath, ".terminator").replace(/\\/g, "/");
+
   return {
     mcpServers: {
       "terminator-memory": {
@@ -31,13 +36,39 @@ function buildMcpConfig(workspacePath: string): McpConfig {
           DB_PATH: dbPath,
         },
       },
-      // Phase 2 servers will be added here as they are built:
-      // "terminator-scheduler": { ... },
-      // "terminator-comms": { ... },
-      // "terminator-browser": { ... },
-      // "terminator-data": { ... },
-      // "terminator-files": { ... },
-      // "terminator-system": { ... },
+      "terminator-scheduler": {
+        command: "node",
+        args: [serverPath("terminator-scheduler")],
+        env: {
+          SCHEDULER_DB_PATH: `${terminatorDir}/schedules.db`,
+        },
+      },
+      "terminator-comms": {
+        command: "node",
+        args: [serverPath("terminator-comms")],
+      },
+      "terminator-browser": {
+        command: "node",
+        args: [serverPath("terminator-browser")],
+        env: {
+          BROWSER_DB_PATH: `${terminatorDir}/browser-cache.db`,
+        },
+      },
+      "terminator-data": {
+        command: "node",
+        args: [serverPath("terminator-data")],
+        env: {
+          DATA_DB_PATH: `${terminatorDir}/data.db`,
+        },
+      },
+      "terminator-files": {
+        command: "node",
+        args: [serverPath("terminator-files")],
+      },
+      "terminator-system": {
+        command: "node",
+        args: [serverPath("terminator-system")],
+      },
     },
   };
 }
