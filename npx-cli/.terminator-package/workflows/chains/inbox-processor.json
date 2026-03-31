@@ -1,0 +1,34 @@
+{
+  "chain": "inbox-processor",
+  "description": "Read messages across channels, categorize them, and respond or escalate",
+  "steps": [
+    {
+      "action": "read_all_channels",
+      "skill": "communication",
+      "prompt": "Check all configured channels for new messages:\n1. Use comms_status to see available channels\n2. For each available channel, use the appropriate read tool (telegram_read, discord_read, slack_read)\n3. Collect all unread/recent messages",
+      "on_failure": "skip"
+    },
+    {
+      "action": "categorize_messages",
+      "skill": "summarize",
+      "prompt": "Categorize each message into:\n- **Actionable**: requires a response or action\n- **Informational**: useful to know but no action needed\n- **Command**: contains a /command that should be executed\n- **Spam/Noise**: can be ignored\n\nFor each actionable message, identify the required action.",
+      "on_failure": "stop"
+    },
+    {
+      "action": "process_commands",
+      "skill": "automation",
+      "prompt": "For any messages categorized as 'Command', parse and execute the command:\n- /status → report task status\n- /tasks → list scheduled tasks\n- /do <instruction> → execute the instruction\n- /memory <query> → search memory\nSend responses back via the same channel.",
+      "on_failure": "skip"
+    },
+    {
+      "action": "store_and_report",
+      "skill": "communication",
+      "prompt": "Store important messages in memory with tag 'inbox'. Create a brief summary of all processed messages and any actions taken. If there are unresolved actionable items, flag them for the user.",
+      "on_failure": "skip"
+    }
+  ],
+  "schedule": "*/30 * * * *",
+  "enabled": false,
+  "notify_on_complete": false,
+  "tags": ["inbox", "messages", "automation"]
+}

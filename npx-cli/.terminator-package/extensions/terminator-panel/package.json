@@ -1,0 +1,102 @@
+{
+  "name": "terminator-panel",
+  "displayName": "Terminator Panel",
+  "description": "UI panel for the Terminator AI Worker — dashboard, schedules, communications, memory, and settings",
+  "version": "0.1.0",
+  "publisher": "terminator",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": ["Other", "Machine Learning", "Data Science"],
+  "keywords": ["AI", "agent", "automation", "scheduler", "MCP"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:terminator.openPanel",
+    "onView:terminator.panel"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "terminator",
+          "title": "Terminator",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "terminator": [
+        {
+          "type": "webview",
+          "id": "terminator.panel",
+          "name": "Terminator",
+          "icon": "media/icon.svg",
+          "when": "true"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "terminator.openPanel",
+        "title": "Open Terminator Panel",
+        "category": "Terminator",
+        "icon": "$(hubot)"
+      },
+      {
+        "command": "terminator.newTask",
+        "title": "New Task",
+        "category": "Terminator"
+      },
+      {
+        "command": "terminator.checkSchedules",
+        "title": "Check Schedules",
+        "category": "Terminator"
+      },
+      {
+        "command": "terminator.openCommHub",
+        "title": "Open Communication Hub",
+        "category": "Terminator"
+      },
+      {
+        "command": "terminator.searchMemory",
+        "title": "Search Memory",
+        "category": "Terminator"
+      },
+      {
+        "command": "terminator.toggleAutonomous",
+        "title": "Toggle Autonomous Mode",
+        "category": "Terminator"
+      },
+      {
+        "command": "terminator.runDoctor",
+        "title": "Run Doctor",
+        "category": "Terminator"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "terminator.openPanel",
+          "when": "true"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

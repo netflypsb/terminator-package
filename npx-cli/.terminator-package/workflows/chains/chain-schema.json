@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Terminator Task Chain",
+  "description": "A multi-step workflow that executes sequentially, passing context between steps",
+  "type": "object",
+  "required": ["chain", "steps"],
+  "properties": {
+    "chain": {
+      "type": "string",
+      "description": "Unique identifier for this chain"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this chain does"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The action to perform (e.g. check_email, research, notify)"
+          },
+          "skill": {
+            "type": "string",
+            "description": "Which skill to use for this step"
+          },
+          "tool": {
+            "type": "string",
+            "description": "Specific MCP tool to invoke (alternative to skill)"
+          },
+          "tool_args": {
+            "type": "object",
+            "description": "Arguments for the tool (when using tool instead of skill)"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Custom prompt for this step (overrides default action prompt)"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Communication channel for send/notify steps"
+          },
+          "on_failure": {
+            "type": "string",
+            "enum": ["stop", "skip", "retry"],
+            "default": "stop",
+            "description": "What to do if this step fails"
+          },
+          "condition": {
+            "type": "string",
+            "description": "Optional condition to evaluate before running this step"
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "schedule": {
+      "type": "string",
+      "description": "Optional cron expression to run this chain on a schedule"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "notify_on_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Send a notification when the chain finishes"
+    },
+    "notify_channel": {
+      "type": "string",
+      "description": "Channel for completion notification"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tags for categorization and search"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "terminator-ai",
+  "version": "0.1.0",
+  "description": "Install Terminator AI Worker in any IDE with a single command",
+  "main": "dist/index.js",
+  "bin": {
+    "terminator": "dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "mcp",
+    "terminator",
+    "autonomous",
+    "ide",
+    "windsurf",
+    "cursor",
+    "claude-code",
+    "vscode",
+    "npx",
+    "cli"
+  ],
+  "author": "netflypsb",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netflypsb/terminator-package.git"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "tar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/tar": "^6.1.11",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ]
+}

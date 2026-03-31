@@ -1,0 +1,19 @@
+{
+  "name": "terminator-installer",
+  "version": "0.1.0",
+  "description": "Cross-IDE installer for Terminator Package",
+  "type": "module",
+  "main": "dist/install.js",
+  "scripts": {
+    "build": "tsup src/install.ts src/doctor.ts src/uninstall.ts --format esm --clean",
+    "dev": "tsup src/install.ts src/doctor.ts src/uninstall.ts --format esm --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

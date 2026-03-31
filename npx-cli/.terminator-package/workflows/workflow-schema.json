@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Terminator Hook",
+  "description": "Hook specification for event-driven automation in the Terminator system",
+  "type": "object",
+  "required": ["name", "trigger", "action"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for this hook"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "on_workspace_open",
+        "on_workspace_close",
+        "on_schedule_trigger",
+        "on_message_received",
+        "on_file_change",
+        "on_manual",
+        "on_interval"
+      ],
+      "description": "Event that triggers this hook"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["prompt", "tool_call", "chain"],
+      "description": "What type of action to execute"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "For action=prompt: the prompt text to send to the AI"
+    },
+    "tool": {
+      "type": "string",
+      "description": "For action=tool_call: the MCP tool to invoke"
+    },
+    "tool_args": {
+      "type": "object",
+      "description": "For action=tool_call: arguments to pass to the tool"
+    },
+    "chain": {
+      "type": "string",
+      "description": "For action=chain: the chain ID to execute"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this hook is active"
+    },
+    "conditions": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "For on_message_received: which channels to listen on"
+        },
+        "file_patterns": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "For on_file_change: glob patterns to watch"
+        },
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "description": "For on_interval: how often to run (min 60s)"
+        }
+      }
+    },
+    "requires_confirmation": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to ask user before executing"
+    },
+    "notify_on_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Send a notification when the hook completes"
+    },
+    "notify_channel": {
+      "type": "string",
+      "description": "Channel to notify on completion (telegram, discord, slack, email)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this hook does"
+    }
+  }
+}
