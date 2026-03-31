@@ -1,0 +1,81 @@
+{
+  "name": "terminator-panel",
+  "displayName": "Terminator Panel",
+  "description": "UI panel for the Terminator AI Worker — dashboard, schedules, communications, memory, and settings",
+  "version": "0.1.0",
+  "publisher": "terminator",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "terminator",
+          "title": "Terminator",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "terminator": [
+        {
+          "type": "webview",
+          "id": "terminator.panel",
+          "name": "Terminator"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "terminator.openPanel",
+        "title": "Terminator: Open Panel"
+      },
+      {
+        "command": "terminator.newTask",
+        "title": "Terminator: New Task"
+      },
+      {
+        "command": "terminator.checkSchedules",
+        "title": "Terminator: Check Schedules"
+      },
+      {
+        "command": "terminator.openCommHub",
+        "title": "Terminator: Open Communication Hub"
+      },
+      {
+        "command": "terminator.searchMemory",
+        "title": "Terminator: Search Memory"
+      },
+      {
+        "command": "terminator.toggleAutonomous",
+        "title": "Terminator: Toggle Autonomous Mode"
+      },
+      {
+        "command": "terminator.runDoctor",
+        "title": "Terminator: Run Doctor"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
