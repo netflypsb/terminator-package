@@ -107,15 +107,30 @@ export function configureSkills(
   const pathPrefix = relSource ? `${relSource}/` : "";
 
   // Copy skills to IDE-specific location
+  // Windsurf requires: .windsurf/skills/<skill-name>/SKILL.md (directory per skill)
+  // Other IDEs: flat file .ide/skills/<skill-name>.md
   if (targets.skillsDir) {
     ensureDir(targets.skillsDir);
     result.targetDirs.push(targets.skillsDir);
 
     for (const skill of SKILLS) {
-      const src = path.join(skillsSrcDir, skill, "SKILL.md");
-      const dest = path.join(targets.skillsDir, `${skill}.md`);
-      if (copyFile(src, dest)) {
-        result.skillsCopied++;
+      const skillSrc = path.join(skillsSrcDir, skill, "SKILL.md");
+      if (!fs.existsSync(skillSrc)) continue;
+
+      if (ide === "windsurf") {
+        // Windsurf: .windsurf/skills/<skill-name>/SKILL.md
+        const skillDir = path.join(targets.skillsDir, skill);
+        ensureDir(skillDir);
+        const dest = path.join(skillDir, "SKILL.md");
+        if (copyFile(skillSrc, dest)) {
+          result.skillsCopied++;
+        }
+      } else {
+        // Other IDEs: flat file
+        const dest = path.join(targets.skillsDir, `${skill}.md`);
+        if (copyFile(skillSrc, dest)) {
+          result.skillsCopied++;
+        }
       }
     }
   }

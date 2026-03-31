@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import type { IDE } from "./detect-ide.js";
 
@@ -87,11 +88,7 @@ function getMcpConfigPath(workspacePath: string, ide: IDE): string {
   }
 }
 
-export function configureMcp(workspacePath: string, ide: IDE, sourcePath?: string): string {
-  const config = buildMcpConfig(workspacePath, sourcePath || workspacePath);
-  const configPath = getMcpConfigPath(workspacePath, ide);
-
-  // Ensure parent directory exists
+function writeMcpConfig(configPath: string, config: McpConfig): void {
   const dir = path.dirname(configPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -102,13 +99,12 @@ export function configureMcp(workspacePath: string, ide: IDE, sourcePath?: strin
     try {
       const existing = JSON.parse(fs.readFileSync(configPath, "utf-8"));
       if (existing.mcpServers) {
-        // Merge: our servers override, but keep user's other servers
         existing.mcpServers = {
           ...existing.mcpServers,
           ...config.mcpServers,
         };
         fs.writeFileSync(configPath, JSON.stringify(existing, null, 2), "utf-8");
-        return configPath;
+        return;
       }
     } catch {
       // If parse fails, overwrite
@@ -116,5 +112,21 @@ export function configureMcp(workspacePath: string, ide: IDE, sourcePath?: strin
   }
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+}
+
+export function configureMcp(workspacePath: string, ide: IDE, sourcePath?: string): string {
+  const config = buildMcpConfig(workspacePath, sourcePath || workspacePath);
+  const configPath = getMcpConfigPath(workspacePath, ide);
+
+  // Write workspace-level config
+  writeMcpConfig(configPath, config);
+
+  // For Windsurf, also write to the global mcp_config.json
+  // Windsurf reads from ~/.codeium/windsurf/mcp_config.json
+  if (ide === "windsurf") {
+    const globalConfigPath = path.join(os.homedir(), ".codeium", "windsurf", "mcp_config.json");
+    writeMcpConfig(globalConfigPath, config);
+  }
+
   return configPath;
 }

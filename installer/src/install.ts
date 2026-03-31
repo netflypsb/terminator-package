@@ -206,6 +206,9 @@ async function main() {
   step('Configuring MCP servers...');
   const mcpPath = configureMcp(workspacePath, detection.ide, sourcePath);
   logSuccess(`MCP config → ${bold(path.relative(workspacePath, mcpPath))}`);
+  if (detection.ide === 'windsurf') {
+    logSuccess(`Also wrote to Windsurf global config (~/.codeium/windsurf/mcp_config.json)`);
+  }
 
   // Step 6: Configure IDE-specific prompt file
   step('Writing system prompt...');

@@ -40,6 +40,7 @@ user-project/
 │   ├── templates/                # 5 workspace templates
 │   ├── resources/guides/         # 5 documentation guides
 │   ├── extensions/               # VS Code extension
+│   │   └── terminator-panel/     # UI panel for VS Code
 │   ├── .env.example              # Environment variable template
 │   └── package.json              # Dependencies
 ├── .terminator/                  # Runtime state (at project root)
@@ -54,6 +55,48 @@ user-project/
 ├── .env                          # API keys (user-managed, never committed)
 └── ... (user's project files)
 ```
+
+---
+
+## User Interfaces
+
+### 1. IDE Chat Panel (Primary)
+The main way to interact with Terminator. Works in all supported IDEs:
+- **Windsurf**: Chat panel with MCP tool support
+- **Cursor**: Composer with agent mode
+- **Claude Code**: Terminal-based chat
+- **Cline**: Sidebar chat panel
+- **VS Code**: GitHub Copilot chat or Cline extension
+
+### 2. VS Code Extension Panel (Visual UI)
+For users who prefer a graphical interface, Terminator includes a VS Code extension with a dedicated panel:
+
+**Location**: `extensions/terminator-panel/`
+
+**Features**:
+- **Dashboard**: System status, quick actions, system info
+- **Schedules**: View scheduled tasks, command examples, pre-built chains
+- **Communications**: Channel status, remote control commands
+- **Memory**: Database status, command examples
+- **Settings**: Toggle autonomous mode, configure services
+
+**Installation**:
+```bash
+cd .terminator-package/extensions/terminator-panel
+pnpm install
+pnpm build
+# Press F5 in VS Code to launch extension host
+```
+
+The extension provides a visual alternative to the chat interface for monitoring and configuration.
+
+### 3. Remote Control (Mobile/External)
+Control Terminator from outside the IDE via messaging channels:
+- Telegram bot commands
+- Discord bot commands
+- Slack slash commands
+
+See Remote Control section below for command reference.
 
 ---
 
@@ -235,6 +278,9 @@ Ask: "Schedule a daily briefing every morning at 9am" — the automation skill +
 
 ### "How do I check if everything is working?"
 Run: `node .terminator-package/installer/dist/doctor.js` — it checks 22+ health points.
+
+### "Does Terminator have a UI?"
+Terminator operates through your IDE's chat interface. Additionally, a **VS Code extension panel** is available at `extensions/terminator-panel/` for visual monitoring and configuration.
 
 ### "How do I uninstall Terminator?"
 Run: `node .terminator-package/installer/dist/uninstall.js` — removes generated configs but preserves source and .env.
