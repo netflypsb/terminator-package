@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "terminator-memory": {
+      "command": "node",
+      "args": [
+        "C:/Users/netfl/Desktop/MCP/terminator-package/mcp-servers/terminator-memory/dist/index.js"
+      ],
+      "env": {
+        "DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/memory.db"
+      }
+    }
+  }
+}

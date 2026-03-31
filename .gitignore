@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+
+# Terminator runtime state (generated on install)
+.terminator/
+
+# IDE-specific generated files (created by installer)
+.windsurfrules
+.cursorrules
+.clinerules
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
