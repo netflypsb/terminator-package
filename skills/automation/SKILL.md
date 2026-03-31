@@ -78,6 +78,34 @@ Use `schedule_create` with:
 
 ## Common Automation Patterns
 
+### News Summary at Specific Time
+```
+User: "Schedule a task to find today's latest news and create a markdown summary at 12:15pm today"
+
+Step 1 - Convert to schedule:
+- Type: "one_shot" (specific time today, not recurring)
+- Run at: "2026-03-31T12:15:00" (ISO timestamp for 12:15pm today)
+
+Step 2 - Call schedule_create:
+{
+  "name": "daily-news-summary-12-15",
+  "type": "one_shot",
+  "description": "Find today's latest news and create a markdown summary",
+  "run_at": "2026-03-31T12:15:00",
+  "payload": {
+    "action": "research_and_summarize",
+    "topic": "today's latest news",
+    "output_format": "markdown",
+    "output_file": "news-summary-2026-03-31.md"
+  }
+}
+
+Step 3 - Confirm to user:
+"✅ Scheduled! Task 'daily-news-summary-12-15' will run today at 12:15 PM."
+
+IMPORTANT: Do NOT execute the research now - only schedule it for later!
+```
+
 ### Website Monitor
 ```
 Schedule: every 4 hours
