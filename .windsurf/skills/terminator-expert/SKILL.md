@@ -331,3 +331,47 @@ Five pre-built templates for common use cases:
 5. **autonomous-worker** — Full autonomous mode with hooks and chains
 
 To use a template, copy its `.terminator-workspace.json` to your project root.
+
+---
+
+## User Interface (UI) Options
+
+Terminator provides two ways to interact:
+
+### 1. Chat Interface (Default)
+The primary interface — just type natural language requests:
+- "Schedule a daily briefing at 8am"
+- "Research the latest AI news"
+- "Check my scheduled tasks"
+
+This works immediately after installation with no additional setup.
+
+### 2. Cowork UI (Visual Panel) — For Non-Devs
+A point-and-click visual interface accessible via the Terminator icon in the left sidebar.
+
+**Features:**
+- **Dashboard** — View MCP server status, skills, agents, hooks at a glance
+- **Schedules** — See all scheduled tasks, create new ones with form fields
+- **Communications** — Send messages via Telegram/Discord/Slack without commands
+- **Memory** — Browse and search stored memories visually
+- **Settings** — Toggle autonomous mode, view configuration
+
+**Installation:**
+```bash
+# Install the VS Code extension (one-time)
+code --install-extension .terminator/terminator-panel.vsix
+```
+
+Then click the ⚡ Terminator icon in the left sidebar.
+
+**When to use which:**
+| Use Case | Recommended UI |
+|----------|---------------|
+| Quick tasks, natural conversation | Chat |
+| Managing many scheduled tasks | Cowork UI |
+| Visual overview of system health | Cowork UI |
+| Non-technical users | Cowork UI |
+| Complex multi-step requests | Chat |
+
+**Switching between UIs:**
+Tell the agent: *"I want to use the Cowork UI"* or *"Keep using chat"* — it will guide you accordingly.

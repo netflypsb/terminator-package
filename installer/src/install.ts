@@ -155,6 +155,19 @@ function detectSourcePath(workspacePath: string): { sourcePath: string; mode: "s
   return { sourcePath: workspacePath, mode: "standalone" };
 }
 
+async function installUIExtension(workspacePath: string, sourcePath: string): Promise<boolean> {
+  const vsixPath = path.join(sourcePath, "terminator-panel.vsix");
+  const destPath = path.join(workspacePath, ".terminator", "terminator-panel.vsix");
+  
+  if (!fs.existsSync(vsixPath)) {
+    return false;
+  }
+  
+  // Copy to .terminator/ for persistence
+  fs.copyFileSync(vsixPath, destPath);
+  return true;
+}
+
 async function main() {
   console.log(BANNER);
 
@@ -236,18 +249,36 @@ async function main() {
     logWarn("No hooks found (hooks/ directory empty)");
   }
 
-  // Step 9: Set up .env file
+  // Step 9: Install UI extension (optional Cowork UI for non-devs)
+  step('Setting up Cowork UI (optional)...');
+  const uiInstalled = await installUIExtension(workspacePath, sourcePath);
+  if (uiInstalled) {
+    logSuccess("Cowork UI extension ready → .terminator/terminator-panel.vsix");
+    log("Install it via: code --install-extension .terminator/terminator-panel.vsix");
+  } else {
+    log("UI extension not found (optional - chat interface works without it)");
+  }
+
+  // Step 10: Set up .env file
   step('Setting up environment...');
   setupEnvFile(workspacePath, sourcePath);
 
   // Done
-  console.log(`\n  ${green('══════════════════════════════════════════════')}`);
+  console.log(`\n  ${green('══════════════════════════════════════════════════')}`);
   console.log(`  ${green(bold('✓ Installation complete!'))}`);
-  console.log(`  ${green('══════════════════════════════════════════════')}`);
+  console.log(`  ${green('══════════════════════════════════════════════════')}`);
   console.log(`\n  ${bold('Next steps:')}`);
   console.log(`  ${bold('1.')} Restart your IDE to pick up the new MCP config`);
   console.log(`  ${bold('2.')} Edit .env to add API keys for Telegram/Discord/etc ${dim('(optional)')}`);
   console.log(`  ${bold('3.')} Try: ${green('"What capabilities do you have as a Terminator?"')}`);
+  console.log(`\n  ${yellow(bold('💡 User Interface Options:'))}`);
+  console.log(`  By default, you interact with Terminator through ${bold('chat')} using natural language.`);
+  if (uiInstalled) {
+    console.log(`  For a visual UI (non-dev friendly):`);
+    console.log(`  ${bold('→')} Run: ${green('code --install-extension .terminator/terminator-panel.vsix')}`);
+    console.log(`  ${bold('→')} Then click the ${green('Terminator')} icon in the left sidebar`);
+  }
+  console.log(`  ${bold('→')} Tell me: ${green('"I want to use the Cowork UI"')} or ${green('"Keep using chat"')}`);
   console.log(`\n  Run ${bold('node installer/dist/doctor.js')} to verify your installation.\n`);
 }
 
