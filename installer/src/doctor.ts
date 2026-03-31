@@ -37,24 +37,54 @@ function warn(label: string, detail?: string): void {
   warnings++;
 }
 
+function detectSourcePath(workspacePath: string): { sourcePath: string; mode: "standalone" | "embedded" } {
+  if (fs.existsSync(path.join(workspacePath, "TERMINATOR.md")) &&
+      fs.existsSync(path.join(workspacePath, "mcp-servers"))) {
+    return { sourcePath: workspacePath, mode: "standalone" };
+  }
+  const embeddedPath = path.join(workspacePath, ".terminator-package");
+  if (fs.existsSync(path.join(embeddedPath, "TERMINATOR.md"))) {
+    return { sourcePath: embeddedPath, mode: "embedded" };
+  }
+  // Fallback: try resolving from the doctor script's own location
+  const installerDir = path.dirname(new URL(import.meta.url).pathname);
+  const normalizedDir = process.platform === "win32" ? installerDir.replace(/^\//, "") : installerDir;
+  const possibleSource = path.resolve(normalizedDir, "..", "..");
+  if (fs.existsSync(path.join(possibleSource, "TERMINATOR.md"))) {
+    return {
+      sourcePath: possibleSource,
+      mode: possibleSource === workspacePath ? "standalone" : "embedded",
+    };
+  }
+  return { sourcePath: workspacePath, mode: "standalone" };
+}
+
 function main() {
   console.log(BANNER);
 
   const workspacePath = process.cwd();
-  console.log(`  Workspace: ${workspacePath}\n`);
+  console.log(`  Workspace: ${workspacePath}`);
+
+  const { sourcePath, mode } = detectSourcePath(workspacePath);
+  if (mode === "embedded") {
+    console.log(`  Mode: ${bold("Embedded")} — source: ${dim(path.relative(workspacePath, sourcePath))}`);
+  } else {
+    console.log(`  Mode: ${bold("Standalone")}`);
+  }
+  console.log("");
 
   // 1. Node.js version
   const nodeVersion = process.version;
   const major = parseInt(nodeVersion.slice(1).split(".")[0], 10);
   check(`Node.js version: ${nodeVersion}`, major >= 20, "Requires Node.js >= 20");
 
-  // 2. TERMINATOR.md exists
+  // 2. TERMINATOR.md exists (in source)
   check(
     "TERMINATOR.md exists",
-    fs.existsSync(path.join(workspacePath, "TERMINATOR.md"))
+    fs.existsSync(path.join(sourcePath, "TERMINATOR.md"))
   );
 
-  // 3. .terminator/ directory exists
+  // 3. .terminator/ directory exists (at workspace root)
   check(
     ".terminator/ directory exists",
     fs.existsSync(path.join(workspacePath, ".terminator"))
@@ -66,9 +96,9 @@ function main() {
     fs.existsSync(path.join(workspacePath, ".terminator", "config.json"))
   );
 
-  // 5. terminator-memory built
+  // 5. terminator-memory built (in source)
   const memoryDist = path.join(
-    workspacePath,
+    sourcePath,
     "mcp-servers",
     "terminator-memory",
     "dist",
@@ -81,7 +111,7 @@ function main() {
   console.log(`\n  IDE detected: ${bold(detection.label)} ${dim(`(confidence: ${detection.confidence})`)}`);
   console.log(`  ${dim(`Reason: ${detection.reason}`)}\n`);
 
-  // 7. MCP config exists
+  // 7. MCP config exists (at workspace root)
   const mcpPaths = [
     path.join(workspacePath, ".mcp.json"),
     path.join(workspacePath, ".cursor", "mcp.json"),
@@ -118,7 +148,7 @@ function main() {
     }
   }
 
-  // 9. IDE-specific prompt file
+  // 9. IDE-specific prompt file (at workspace root)
   const promptFiles = [
     { file: ".windsurfrules", ide: "Windsurf" },
     { file: ".cursorrules", ide: "Cursor" },
@@ -132,17 +162,18 @@ function main() {
   );
   check("IDE-specific system prompt file exists", promptFound);
 
-  // 10. Skills and agents
+  // 10. Skills and agents (in source)
   const skillNames = [
     "research", "writing", "analysis", "communication",
     "planning", "automation", "coding", "summarize", "onboarding",
+    "terminator-expert",
   ];
   const agentNames = [
     "researcher", "writer", "analyst", "scheduler", "communicator", "supervisor",
   ];
 
   const skillsFound = skillNames.filter((s) =>
-    fs.existsSync(path.join(workspacePath, "skills", s, "SKILL.md"))
+    fs.existsSync(path.join(sourcePath, "skills", s, "SKILL.md"))
   );
   check(
     `Skills installed: ${skillsFound.length}/${skillNames.length}`,
@@ -153,7 +184,7 @@ function main() {
   );
 
   const agentsFound = agentNames.filter((a) =>
-    fs.existsSync(path.join(workspacePath, "agents", `${a}.md`))
+    fs.existsSync(path.join(sourcePath, "agents", `${a}.md`))
   );
   check(
     `Agents installed: ${agentsFound.length}/${agentNames.length}`,
@@ -163,43 +194,42 @@ function main() {
       : undefined
   );
 
-  // 10b. Hooks
-  const hooksDir = path.join(workspacePath, "hooks");
+  // 10b. Hooks (in source)
+  const hooksDir = path.join(sourcePath, "hooks");
   const hookFiles = fs.existsSync(hooksDir)
     ? fs.readdirSync(hooksDir).filter((f) => f.endsWith(".json") && f !== "hook-schema.json")
     : [];
   check(`Hooks defined: ${hookFiles.length}`, hookFiles.length > 0, "No hook files found in hooks/");
 
-  // 10c. Task chains
-  const chainsDir = path.join(workspacePath, "hooks", "chains");
+  // 10c. Task chains (in source)
+  const chainsDir = path.join(sourcePath, "hooks", "chains");
   const chainFiles = fs.existsSync(chainsDir)
     ? fs.readdirSync(chainsDir).filter((f) => f.endsWith(".json") && f !== "chain-schema.json")
     : [];
   check(`Task chains defined: ${chainFiles.length}`, chainFiles.length > 0, "No chain files found in hooks/chains/");
 
-  // 10d. Hooks registry
+  // 10d. Hooks registry (at workspace root)
   check(
     "Hooks registry exists (.terminator/hooks-registry.json)",
     fs.existsSync(path.join(workspacePath, ".terminator", "hooks-registry.json"))
   );
 
-  // 10e. Skills index
+  // 10e. Skills index (at workspace root)
   check(
     "Skills index exists (.terminator/skills-index.json)",
     fs.existsSync(path.join(workspacePath, ".terminator", "skills-index.json"))
   );
 
-  // 11. .env file
+  // 11. .env file (at workspace root)
   if (fs.existsSync(path.join(workspacePath, ".env"))) {
     check(".env file exists", true);
   } else {
     warn(".env file not found", "Communication features won't work without API keys");
   }
 
-  // 11. Can launch the MCP server process
+  // 12. Can launch the MCP server process
   if (fs.existsSync(memoryDist)) {
     try {
-      // Quick smoke test: start the server and immediately kill it
       execSync(`node -e "import('${memoryDist.replace(/\\/g, "/")}')"`, {
         timeout: 5000,
         stdio: "pipe",

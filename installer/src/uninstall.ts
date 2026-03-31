@@ -42,16 +42,36 @@ function removeDir(dirPath: string, label: string): boolean {
   return false;
 }
 
+function detectMode(workspacePath: string): { sourcePath: string; mode: "standalone" | "embedded" } {
+  // Standalone: TERMINATOR.md at project root
+  if (fs.existsSync(path.join(workspacePath, "TERMINATOR.md")) &&
+      fs.existsSync(path.join(workspacePath, "mcp-servers"))) {
+    return { sourcePath: workspacePath, mode: "standalone" };
+  }
+  // Embedded: .terminator-package/ subfolder
+  const embeddedPath = path.join(workspacePath, ".terminator-package");
+  if (fs.existsSync(path.join(embeddedPath, "TERMINATOR.md"))) {
+    return { sourcePath: embeddedPath, mode: "embedded" };
+  }
+  return { sourcePath: workspacePath, mode: "standalone" };
+}
+
 function main() {
   console.log(BANNER);
 
   const workspacePath = process.cwd();
   log(`Workspace: ${workspacePath}\n`);
 
-  // Verify we're in the right directory
-  const terminatorMd = path.join(workspacePath, "TERMINATOR.md");
+  const { sourcePath, mode } = detectMode(workspacePath);
+
+  if (mode === "embedded") {
+    log(`\x1b[36mEmbedded mode\x1b[0m — source: .terminator-package/\n`);
+  }
+
+  // Verify we can find Terminator source
+  const terminatorMd = path.join(sourcePath, "TERMINATOR.md");
   if (!fs.existsSync(terminatorMd)) {
-    console.log("  \x1b[31m[ERROR]\x1b[0m TERMINATOR.md not found. Are you in the terminator-package root?");
+    console.log("  \x1b[31m[ERROR]\x1b[0m TERMINATOR.md not found. No Terminator installation detected.");
     process.exit(1);
   }
 
@@ -80,7 +100,13 @@ function main() {
   log("\n\x1b[1mRemoving runtime state...\x1b[0m");
   if (removeDir(path.join(workspacePath, ".terminator"), ".terminator/ (config, databases, logs)")) count++;
 
-  // 4. Remove .env (ask first — it contains user secrets)
+  // 4. In embedded mode, offer to remove .terminator-package/
+  if (mode === "embedded") {
+    log("\n\x1b[1mTerminator source:\x1b[0m");
+    log("  \x1b[33m⚠\x1b[0m .terminator-package/ — preserved. Delete manually to fully remove Terminator.");
+  }
+
+  // 5. Preserve .env
   log("\n\x1b[1mUser files (preserved):\x1b[0m");
   const envPath = path.join(workspacePath, ".env");
   if (fs.existsSync(envPath)) {
@@ -95,7 +121,11 @@ function main() {
     log("No generated files found to remove.");
   }
   log("Source code, skills, agents, and MCP servers are untouched.");
-  log("Re-run the installer to set up again: node installer/dist/install.js");
+  if (mode === "embedded") {
+    log("Re-run the installer: node .terminator-package/installer/dist/install.js");
+  } else {
+    log("Re-run the installer: node installer/dist/install.js");
+  }
   console.log("  ──────────────────────────────────────────────\n");
 }
 

@@ -12,6 +12,7 @@ const SKILLS = [
   "coding",
   "summarize",
   "onboarding",
+  "terminator-expert",
 ];
 
 const AGENTS = [
@@ -88,8 +89,10 @@ export interface SkillInstallResult {
 
 export function configureSkills(
   workspacePath: string,
-  ide: IDE
+  ide: IDE,
+  sourcePath?: string
 ): SkillInstallResult {
+  const src = sourcePath || workspacePath;
   const targets = getTargetDirs(workspacePath, ide);
   const result: SkillInstallResult = {
     skillsCopied: 0,
@@ -98,8 +101,10 @@ export function configureSkills(
     targetDirs: [],
   };
 
-  const skillsSrcDir = path.join(workspacePath, "skills");
-  const agentsSrcDir = path.join(workspacePath, "agents");
+  const skillsSrcDir = path.join(src, "skills");
+  const agentsSrcDir = path.join(src, "agents");
+  const relSource = path.relative(workspacePath, src).replace(/\\/g, "/");
+  const pathPrefix = relSource ? `${relSource}/` : "";
 
   // Copy skills to IDE-specific location
   if (targets.skillsDir) {
@@ -174,14 +179,16 @@ export function configureSkills(
   const index = {
     skills: SKILLS.map((s) => ({
       name: s,
-      path: `skills/${s}/SKILL.md`,
+      path: `${pathPrefix}skills/${s}/SKILL.md`,
       installed: fs.existsSync(path.join(skillsSrcDir, s, "SKILL.md")),
     })),
     agents: AGENTS.map((a) => ({
       name: a,
-      path: `agents/${a}.md`,
+      path: `${pathPrefix}agents/${a}.md`,
       installed: fs.existsSync(path.join(agentsSrcDir, `${a}.md`)),
     })),
+    mode: relSource ? "embedded" : "standalone",
+    sourcePath: relSource || ".",
     ide,
     installedAt: new Date().toISOString(),
   };

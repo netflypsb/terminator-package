@@ -13,9 +13,9 @@ export interface McpConfig {
   >;
 }
 
-function buildMcpConfig(workspacePath: string): McpConfig {
+function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
   const memoryServerPath = path
-    .join(workspacePath, "mcp-servers", "terminator-memory", "dist", "index.js")
+    .join(sourcePath, "mcp-servers", "terminator-memory", "dist", "index.js")
     .replace(/\\/g, "/");
 
   const dbPath = path
@@ -23,7 +23,7 @@ function buildMcpConfig(workspacePath: string): McpConfig {
     .replace(/\\/g, "/");
 
   const serverPath = (name: string) =>
-    path.join(workspacePath, "mcp-servers", name, "dist", "index.js").replace(/\\/g, "/");
+    path.join(sourcePath, "mcp-servers", name, "dist", "index.js").replace(/\\/g, "/");
 
   const terminatorDir = path.join(workspacePath, ".terminator").replace(/\\/g, "/");
 
@@ -87,8 +87,8 @@ function getMcpConfigPath(workspacePath: string, ide: IDE): string {
   }
 }
 
-export function configureMcp(workspacePath: string, ide: IDE): string {
-  const config = buildMcpConfig(workspacePath);
+export function configureMcp(workspacePath: string, ide: IDE, sourcePath?: string): string {
+  const config = buildMcpConfig(workspacePath, sourcePath || workspacePath);
   const configPath = getMcpConfigPath(workspacePath, ide);
 
   // Ensure parent directory exists
