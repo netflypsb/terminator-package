@@ -1,0 +1,22 @@
+{
+  "name": "Content Creation",
+  "description": "Writing-focused workspace for blogs, articles, documentation, and content production.",
+  "version": "0.1.0",
+  "servers": {
+    "terminator-memory": true,
+    "terminator-scheduler": false,
+    "terminator-comms": false,
+    "terminator-browser": true,
+    "terminator-data": false,
+    "terminator-files": true,
+    "terminator-system": true
+  },
+  "skills": ["writing", "research", "summarize", "communication"],
+  "agents": ["writer", "researcher"],
+  "folders": ["drafts", "published", "assets", "research"],
+  "autonomous": {
+    "enabled": false,
+    "requireConfirmation": ["delete", "send_message"],
+    "autoApprove": ["read", "write_file", "search", "browse"]
+  }
+}

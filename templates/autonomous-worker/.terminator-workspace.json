@@ -1,0 +1,27 @@
+{
+  "name": "Autonomous Worker",
+  "description": "Full autonomous operation with all servers, pre-configured schedules, hooks, and remote control via messaging channels.",
+  "version": "0.1.0",
+  "servers": {
+    "terminator-memory": true,
+    "terminator-scheduler": true,
+    "terminator-comms": true,
+    "terminator-browser": true,
+    "terminator-data": true,
+    "terminator-files": true,
+    "terminator-system": true
+  },
+  "skills": ["research", "writing", "analysis", "communication", "planning", "automation", "coding", "summarize", "onboarding"],
+  "agents": ["researcher", "writer", "analyst", "scheduler", "communicator", "supervisor"],
+  "folders": ["tasks", "inbox", "outbox", "logs"],
+  "hooks": ["on-workspace-open", "on-schedule-trigger", "on-message-received"],
+  "chains": ["daily-briefing", "website-monitor", "inbox-processor"],
+  "autonomous": {
+    "enabled": true,
+    "requireConfirmation": ["delete", "spend_money"],
+    "autoApprove": ["read", "write_file", "search", "browse", "send_message"],
+    "maxTokensPerTask": 100000,
+    "notifyOnCompletion": true,
+    "defaultNotificationChannel": "telegram"
+  }
+}

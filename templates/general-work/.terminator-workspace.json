@@ -1,0 +1,22 @@
+{
+  "name": "General Work",
+  "description": "All-purpose knowledge work workspace with every Terminator capability enabled.",
+  "version": "0.1.0",
+  "servers": {
+    "terminator-memory": true,
+    "terminator-scheduler": true,
+    "terminator-comms": true,
+    "terminator-browser": true,
+    "terminator-data": true,
+    "terminator-files": true,
+    "terminator-system": true
+  },
+  "skills": ["research", "writing", "analysis", "communication", "planning", "automation", "coding", "summarize", "onboarding"],
+  "agents": ["researcher", "writer", "analyst", "scheduler", "communicator", "supervisor"],
+  "folders": ["inbox", "drafts", "archive", "data"],
+  "autonomous": {
+    "enabled": false,
+    "requireConfirmation": ["delete", "send_message"],
+    "autoApprove": ["read", "write_file", "search", "browse"]
+  }
+}

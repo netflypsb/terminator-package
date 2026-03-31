@@ -15,20 +15,32 @@ const BANNER = `
 ╚══════════════════════════════════════════════╝
 `;
 
+const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
+const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
+const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
+const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+const dim = (s: string) => `\x1b[90m${s}\x1b[0m`;
+
+let stepNum = 0;
+function step(msg: string) {
+  stepNum++;
+  console.log(`\n  ${bold(`[${stepNum}/9]`)} ${msg}`);
+}
+
 function log(msg: string) {
-  console.log(`  [Terminator] ${msg}`);
+  console.log(`        ${msg}`);
 }
 
 function logSuccess(msg: string) {
-  console.log(`  [OK] ${msg}`);
+  console.log(`        ${green('✓')} ${msg}`);
 }
 
 function logWarn(msg: string) {
-  console.log(`  [WARN] ${msg}`);
+  console.log(`        ${yellow('⚠')} ${msg}`);
 }
 
 function logError(msg: string) {
-  console.error(`  [ERROR] ${msg}`);
+  console.error(`        ${red('✗')} ${msg}`);
 }
 
 function ensureTerminatorDir(workspacePath: string): void {
@@ -116,9 +128,10 @@ async function main() {
   console.log(BANNER);
 
   const workspacePath = process.cwd();
-  log(`Workspace: ${workspacePath}`);
+  console.log(`  ${dim('Workspace:')} ${workspacePath}`);
 
   // Step 1: Verify we're in the terminator-package root
+  step('Verifying workspace...');
   const terminatorMd = path.join(workspacePath, "TERMINATOR.md");
   if (!fs.existsSync(terminatorMd)) {
     logError(
@@ -129,6 +142,7 @@ async function main() {
   logSuccess("Found TERMINATOR.md");
 
   // Step 2: Check MCP servers are built
+  step('Checking MCP server builds...');
   const { built, missing } = verifyMcpServersBuilt(workspacePath);
   if (built.length === 0) {
     logError("No MCP servers built. Run 'pnpm build' first.");
@@ -140,61 +154,59 @@ async function main() {
   }
 
   // Step 3: Detect IDE
+  step('Detecting IDE...');
   const detection = detectIDE(workspacePath);
-  log(`Detected IDE: ${detection.label} (confidence: ${detection.confidence})`);
-  log(`  Reason: ${detection.reason}`);
+  logSuccess(`${bold(detection.label)} ${dim(`(confidence: ${detection.confidence})`)}`);
 
   // Step 4: Create .terminator/ directory
+  step('Creating runtime directory...');
   ensureTerminatorDir(workspacePath);
-  logSuccess("Created .terminator/ runtime directory");
+  logSuccess("Created .terminator/ with config.json and logs/");
 
   // Step 5: Configure MCP servers
+  step('Configuring MCP servers...');
   const mcpPath = configureMcp(workspacePath, detection.ide);
-  logSuccess(`MCP config written to: ${path.relative(workspacePath, mcpPath)}`);
+  logSuccess(`MCP config → ${bold(path.relative(workspacePath, mcpPath))}`);
 
   // Step 6: Configure IDE-specific prompt file
+  step('Writing system prompt...');
   const promptPath = configurePrompts(workspacePath, detection.ide);
   if (promptPath) {
-    logSuccess(
-      `System prompt written to: ${path.relative(workspacePath, promptPath)}`
-    );
+    logSuccess(`System prompt → ${bold(path.relative(workspacePath, promptPath))}`);
   } else {
     logWarn("Could not determine IDE-specific prompt file location");
   }
 
   // Step 7: Install skills and agents
+  step('Installing skills & agents...');
   const skillResult = configureSkills(workspacePath, detection.ide);
-  logSuccess(`Skills installed: ${skillResult.skillsCopied} skills, ${skillResult.agentsCopied} agents`);
+  logSuccess(`${skillResult.skillsCopied} skills, ${skillResult.agentsCopied} agents installed`);
   if (skillResult.workflowsCreated > 0) {
-    logSuccess(`Windsurf workflows created: ${skillResult.workflowsCreated}`);
-  }
-  if (skillResult.targetDirs.length > 0) {
-    log(`  IDE locations: ${skillResult.targetDirs.map((d) => path.relative(workspacePath, d)).join(", ")}`);
+    logSuccess(`${skillResult.workflowsCreated} Windsurf workflows created`);
   }
 
   // Step 8: Install hooks
+  step('Registering hooks...');
   const hookResult = configureHooks(workspacePath, detection.ide);
   if (hookResult.hooksLoaded > 0) {
-    logSuccess(`Hooks installed: ${hookResult.hooksRegistered} hooks via ${hookResult.method}`);
+    logSuccess(`${hookResult.hooksRegistered} hooks registered via ${hookResult.method}`);
   } else {
-    log("No hooks found (hooks/ directory empty)");
+    logWarn("No hooks found (hooks/ directory empty)");
   }
 
   // Step 9: Set up .env file
+  step('Setting up environment...');
   setupEnvFile(workspacePath);
 
   // Done
-  console.log("");
-  console.log("  ══════════════════════════════════════════════");
-  console.log("  Installation complete!");
-  console.log("");
-  console.log("  Next steps:");
-  console.log("  1. Restart your IDE to pick up the new MCP config");
-  console.log("  2. Edit .env to add API keys for Telegram/Discord/etc (optional)");
-  console.log('  3. Try: "What capabilities do you have as a Terminator?"');
-  console.log("");
-  console.log("  Run 'node installer/dist/doctor.js' to verify your installation.");
-  console.log("  ══════════════════════════════════════════════");
+  console.log(`\n  ${green('══════════════════════════════════════════════')}`);
+  console.log(`  ${green(bold('✓ Installation complete!'))}`);
+  console.log(`  ${green('══════════════════════════════════════════════')}`);
+  console.log(`\n  ${bold('Next steps:')}`);
+  console.log(`  ${bold('1.')} Restart your IDE to pick up the new MCP config`);
+  console.log(`  ${bold('2.')} Edit .env to add API keys for Telegram/Discord/etc ${dim('(optional)')}`);
+  console.log(`  ${bold('3.')} Try: ${green('"What capabilities do you have as a Terminator?"')}`);
+  console.log(`\n  Run ${bold('node installer/dist/doctor.js')} to verify your installation.\n`);
 }
 
 main().catch((err) => {

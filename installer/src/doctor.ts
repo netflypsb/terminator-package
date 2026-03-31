@@ -12,22 +12,28 @@ const BANNER = `
 ╚══════════════════════════════════════════════╝
 `;
 
+const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
+const yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
+const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
+const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+const dim = (s: string) => `\x1b[90m${s}\x1b[0m`;
+
 let passed = 0;
 let failed = 0;
 let warnings = 0;
 
 function check(label: string, ok: boolean, detail?: string): void {
   if (ok) {
-    console.log(`  [PASS] ${label}`);
+    console.log(`  ${green('✓')} ${label}`);
     passed++;
   } else {
-    console.log(`  [FAIL] ${label}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  ${red('✗')} ${label}${detail ? ` — ${red(detail)}` : ""}`);
     failed++;
   }
 }
 
 function warn(label: string, detail?: string): void {
-  console.log(`  [WARN] ${label}${detail ? ` — ${detail}` : ""}`);
+  console.log(`  ${yellow('⚠')} ${label}${detail ? ` — ${detail}` : ""}`);
   warnings++;
 }
 
@@ -72,10 +78,8 @@ function main() {
 
   // 6. IDE detection
   const detection = detectIDE(workspacePath);
-  console.log(
-    `\n  IDE detected: ${detection.label} (confidence: ${detection.confidence})`
-  );
-  console.log(`  Reason: ${detection.reason}\n`);
+  console.log(`\n  IDE detected: ${bold(detection.label)} ${dim(`(confidence: ${detection.confidence})`)}`);
+  console.log(`  ${dim(`Reason: ${detection.reason}`)}\n`);
 
   // 7. MCP config exists
   const mcpPaths = [
@@ -210,11 +214,11 @@ function main() {
 
   // Summary
   console.log("\n  ──────────────────────────────────────────────");
-  console.log(`  Results: ${passed} passed, ${failed} failed, ${warnings} warnings`);
+  console.log(`  Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : `${failed} failed`}, ${warnings > 0 ? yellow(`${warnings} warnings`) : `${warnings} warnings`}`);
   if (failed === 0) {
-    console.log("  Status: HEALTHY");
+    console.log(`  Status: ${green(bold('HEALTHY'))}`);
   } else {
-    console.log("  Status: ISSUES FOUND — see FAIL items above");
+    console.log(`  Status: ${red(bold('ISSUES FOUND'))} — see ${red('✗')} items above`);
   }
   console.log("  ──────────────────────────────────────────────\n");
 
