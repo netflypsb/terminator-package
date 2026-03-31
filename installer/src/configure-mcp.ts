@@ -10,6 +10,7 @@ export interface McpConfig {
       command: string;
       args: string[];
       env?: Record<string, string>;
+      cwd?: string;
     }
   >;
 }
@@ -27,6 +28,7 @@ function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
     path.join(sourcePath, "mcp-servers", name, "dist", "index.js").replace(/\\/g, "/");
 
   const terminatorDir = path.join(workspacePath, ".terminator").replace(/\\/g, "/");
+  const cwd = workspacePath.replace(/\\/g, "/");
 
   return {
     mcpServers: {
@@ -36,6 +38,7 @@ function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
         env: {
           DB_PATH: dbPath,
         },
+        cwd,
       },
       "terminator-scheduler": {
         command: "node",
@@ -43,6 +46,7 @@ function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
         env: {
           SCHEDULER_DB_PATH: `${terminatorDir}/schedules.db`,
         },
+        cwd,
       },
       "terminator-comms": {
         command: "node",
@@ -54,6 +58,7 @@ function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
         env: {
           BROWSER_DB_PATH: `${terminatorDir}/browser-cache.db`,
         },
+        cwd,
       },
       "terminator-data": {
         command: "node",
@@ -61,6 +66,7 @@ function buildMcpConfig(workspacePath: string, sourcePath: string): McpConfig {
         env: {
           DATA_DB_PATH: `${terminatorDir}/data.db`,
         },
+        cwd,
       },
       "terminator-files": {
         command: "node",

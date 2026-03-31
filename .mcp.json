@@ -7,7 +7,8 @@
       ],
       "env": {
         "DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/memory.db"
-      }
+      },
+      "cwd": "C:/Users/netfl/Desktop/MCP/terminator-package"
     },
     "terminator-scheduler": {
       "command": "node",
@@ -16,7 +17,8 @@
       ],
       "env": {
         "SCHEDULER_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/schedules.db"
-      }
+      },
+      "cwd": "C:/Users/netfl/Desktop/MCP/terminator-package"
     },
     "terminator-comms": {
       "command": "node",
@@ -31,7 +33,8 @@
       ],
       "env": {
         "BROWSER_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/browser-cache.db"
-      }
+      },
+      "cwd": "C:/Users/netfl/Desktop/MCP/terminator-package"
     },
     "terminator-data": {
       "command": "node",
@@ -40,7 +43,8 @@
       ],
       "env": {
         "DATA_DB_PATH": "C:/Users/netfl/Desktop/MCP/terminator-package/.terminator/data.db"
-      }
+      },
+      "cwd": "C:/Users/netfl/Desktop/MCP/terminator-package"
     },
     "terminator-files": {
       "command": "node",
