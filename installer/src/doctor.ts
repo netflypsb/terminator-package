@@ -128,7 +128,44 @@ function main() {
   );
   check("IDE-specific system prompt file exists", promptFound);
 
-  // 10. .env file
+  // 10. Skills and agents
+  const skillNames = [
+    "research", "writing", "analysis", "communication",
+    "planning", "automation", "coding", "summarize", "onboarding",
+  ];
+  const agentNames = [
+    "researcher", "writer", "analyst", "scheduler", "communicator", "supervisor",
+  ];
+
+  const skillsFound = skillNames.filter((s) =>
+    fs.existsSync(path.join(workspacePath, "skills", s, "SKILL.md"))
+  );
+  check(
+    `Skills installed: ${skillsFound.length}/${skillNames.length}`,
+    skillsFound.length === skillNames.length,
+    skillsFound.length < skillNames.length
+      ? `Missing: ${skillNames.filter((s) => !skillsFound.includes(s)).join(", ")}`
+      : undefined
+  );
+
+  const agentsFound = agentNames.filter((a) =>
+    fs.existsSync(path.join(workspacePath, "agents", `${a}.md`))
+  );
+  check(
+    `Agents installed: ${agentsFound.length}/${agentNames.length}`,
+    agentsFound.length === agentNames.length,
+    agentsFound.length < agentNames.length
+      ? `Missing: ${agentNames.filter((a) => !agentsFound.includes(a)).join(", ")}`
+      : undefined
+  );
+
+  // 10b. Skills index
+  check(
+    "Skills index exists (.terminator/skills-index.json)",
+    fs.existsSync(path.join(workspacePath, ".terminator", "skills-index.json"))
+  );
+
+  // 11. .env file
   if (fs.existsSync(path.join(workspacePath, ".env"))) {
     check(".env file exists", true);
   } else {

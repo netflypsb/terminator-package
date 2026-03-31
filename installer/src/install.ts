@@ -5,6 +5,7 @@ import path from "path";
 import { detectIDE } from "./detect-ide.js";
 import { configureMcp } from "./configure-mcp.js";
 import { configurePrompts } from "./configure-prompts.js";
+import { configureSkills } from "./configure-skills.js";
 
 const BANNER = `
 ╔══════════════════════════════════════════════╗
@@ -160,7 +161,17 @@ async function main() {
     logWarn("Could not determine IDE-specific prompt file location");
   }
 
-  // Step 7: Set up .env file
+  // Step 7: Install skills and agents
+  const skillResult = configureSkills(workspacePath, detection.ide);
+  logSuccess(`Skills installed: ${skillResult.skillsCopied} skills, ${skillResult.agentsCopied} agents`);
+  if (skillResult.workflowsCreated > 0) {
+    logSuccess(`Windsurf workflows created: ${skillResult.workflowsCreated}`);
+  }
+  if (skillResult.targetDirs.length > 0) {
+    log(`  IDE locations: ${skillResult.targetDirs.map((d) => path.relative(workspacePath, d)).join(", ")}`);
+  }
+
+  // Step 8: Set up .env file
   setupEnvFile(workspacePath);
 
   // Done
