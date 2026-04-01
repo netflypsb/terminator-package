@@ -273,13 +273,57 @@ async function handleInstall(args) {
     
     // Install dependencies
     colorLog('cyan', 'Installing dependencies...');
-    await execCommand('pnpm install', installPath);
-    colorLog('green', '✓ Dependencies installed');
+    try {
+      // Try installing without scripts first to avoid postinstall loops
+      await execCommand('pnpm install --ignore-scripts', installPath);
+      colorLog('green', '✓ Dependencies installed (without scripts)');
+    } catch (error) {
+      colorLog('red', '❌ Dependency installation failed');
+      colorLog('yellow', 'Trying alternative installation method...');
+      
+      // Try npm as fallback
+      try {
+        await execCommand('npm install --ignore-scripts', installPath);
+        colorLog('green', '✓ Dependencies installed with npm (without scripts)');
+      } catch (npmError) {
+        colorLog('red', '❌ Both pnpm and npm installation failed');
+        colorLog('cyan', '\nTroubleshooting steps:');
+        colorLog('white', '1. Make sure Node.js >= 20 is installed: node --version');
+        colorLog('white', '2. Try installing pnpm manually: npm install -g pnpm');
+        colorLog('white', '3. Check if you have write permissions to the installation directory');
+        colorLog('white', '4. Try running in administrator mode');
+        colorLog('yellow', '\nManual installation commands:');
+        colorLog('white', `cd "${installPath}"`);
+        colorLog('white', 'pnpm install --ignore-scripts');
+        colorLog('white', 'cd installer && npm run build && cd ..');
+        colorLog('white', 'cd ..');
+        colorLog('white', 'node installer/dist/install.js');
+        throw new Error(`Dependency installation failed: ${error.message}`);
+      }
+    }
     
-    // Build package
-    colorLog('cyan', 'Building Terminator components...');
-    await execCommand('pnpm build', installPath);
-    colorLog('green', '✓ Components built');
+    // Build package (build installer only, skip MCP servers for now)
+    colorLog('cyan', 'Building essential components...');
+    try {
+      // Build just the installer
+      await execCommand('cd installer && npm run build', installPath);
+      colorLog('green', '✓ Essential components built');
+    } catch (error) {
+      colorLog('red', '❌ Build failed');
+      colorLog('yellow', 'Trying alternative build method...');
+      
+      try {
+        await execCommand('cd installer && npm run build', installPath);
+        colorLog('green', '✓ Components built with npm');
+      } catch (npmError) {
+        colorLog('red', '❌ Build failed completely');
+        colorLog('yellow', '\nBuild troubleshooting:');
+        colorLog('white', '1. Check if dependencies were installed successfully');
+        colorLog('white', '2. Try running build manually to see specific errors');
+        colorLog('white', '3. Some native modules may need additional setup');
+        throw new Error(`Build failed: ${error.message}`);
+      }
+    }
     
     // Run installer
     colorLog('cyan', 'Configuring IDE integration...');

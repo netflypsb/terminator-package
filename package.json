@@ -46,5 +46,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.3"
+  },
+  "dependencies": {
+    "terminator-ai": "file:terminator-ai-npx/terminator-ai-0.1.0.tgz"
   }
 }

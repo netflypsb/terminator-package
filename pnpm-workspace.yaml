@@ -1,5 +1,4 @@
 packages:
   - "mcp-servers/*"
   - "installer"
-  - "extensions/*"
   - "npx-cli"
