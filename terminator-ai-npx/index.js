@@ -437,15 +437,21 @@ async function handleInstall(args) {
     
     // Extract
     colorLog('cyan', 'Extracting package...');
+    
+    // For upgrades, completely remove old .terminator-package first to ensure clean install
+    if ((existingInstall.needsUpgrade || options.upgrade) && existingInstall.exists) {
+      colorLog('cyan', 'Removing old installation completely for fresh upgrade...');
+      try {
+        await fs.rm(installPath, { recursive: true, force: true });
+        colorLog('green', '✓ Old installation removed');
+      } catch (error) {
+        colorLog('yellow', `⚠ Could not remove old installation: ${error.message}`);
+      }
+    }
+    
     await fs.mkdir(installPath, { recursive: true });
     await extractTar(tarPath, installPath);
     colorLog('green', '✓ Package extracted');
-    
-    // Post-extraction cleanup: Remove old directories that might have been in the tarball
-    if (existingInstall.needsUpgrade || options.upgrade) {
-      colorLog('cyan', 'Cleaning up old components from extracted package...');
-      await performUpgrade(installPath);
-    }
     
     // Install pnpm if not available
     try {
