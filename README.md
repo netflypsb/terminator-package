@@ -4,7 +4,7 @@
 
 Terminator brings the high-powered agentic capabilities of coding IDEs (Windsurf, Cursor, Claude Code, Cline, Codex) to **general knowledge work** — research, writing, data analysis, communications, and full autonomous operation with remote control via Telegram, Discord, and Slack.
 
-> **7 MCP servers · 48+ tools · 12 skills · 6 agents · 2 hooks**
+> **7 MCP servers · 48+ tools · 10 skills · 5 agents · 2 hooks**
 
 ---
 
@@ -16,9 +16,9 @@ npx terminator-ai
 ```
 That's it! This single command will:
 - ✅ Detect your IDE automatically (VS Code, Cursor, Windsurf, Claude Code)
-- ✅ Download and install all 8 MCP servers with 68+ tools
-- ✅ Set up all 12 skills and 6 agents
-- ✅ Configure IDE integration and extensions
+- ✅ Download and install all 7 MCP servers with 48+ tools
+- ✅ Set up all 10 skills and 5 agents
+- ✅ Configure IDE integration
 - ✅ Transform your AI agent into Terminator
 
 ### Option 2: IDE Agent Install (Easy)
@@ -63,7 +63,7 @@ The installer automatically:
 - Generates the MCP server configuration (`.mcp.json` or `.cursor/mcp.json`) with paths pointing into `.terminator-package/`
 - Generates the IDE-specific system prompt (`.windsurfrules`, `.cursorrules`, `CLAUDE.md`, etc.) with Terminator path awareness
 - Creates `.terminator/` runtime directory with default config at project root
-- Installs all 10 skills, 6 agents, and 3 hooks
+- Installs all 10 skills, 5 agents, and 2 hooks
 - Sets up a skills index and hooks registry
 
 **Your project directory stays clean** — only these hidden items are added:
@@ -79,7 +79,7 @@ The installer automatically:
 node .terminator-package/installer/dist/doctor.js
 ```
 
-You should see `22+ passed, 0 failed — HEALTHY`.
+You should see `20+ passed, 0 failed — HEALTHY`.
 
 ### Alternative: Standalone Install
 
