@@ -441,6 +441,12 @@ async function handleInstall(args) {
     await extractTar(tarPath, installPath);
     colorLog('green', '✓ Package extracted');
     
+    // Post-extraction cleanup: Remove old directories that might have been in the tarball
+    if (existingInstall.needsUpgrade || options.upgrade) {
+      colorLog('cyan', 'Cleaning up old components from extracted package...');
+      await performUpgrade(installPath);
+    }
+    
     // Install pnpm if not available
     try {
       await execCommand('pnpm --version', options.path);

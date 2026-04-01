@@ -1,6 +1,6 @@
 {
   "name": "terminator-ai",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Install Terminator AI Worker (7 MCP servers, 48+ tools, 10 skills) in any IDE with a single command",
   "main": "index.js",
   "bin": {
