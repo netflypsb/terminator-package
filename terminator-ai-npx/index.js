@@ -453,6 +453,43 @@ async function handleInstall(args) {
     await extractTar(tarPath, installPath);
     colorLog('green', '✓ Package extracted');
     
+    // Post-extraction: Remove any old directories that came from the tarball
+    if (existingInstall.needsUpgrade || options.upgrade) {
+      colorLog('cyan', 'Removing legacy components from extracted package...');
+      const legacyDirs = [
+        path.join(installPath, 'extensions'),
+        path.join(installPath, 'mcp-servers/terminator-scheduler'),
+        path.join(installPath, 'workflows/chains'),
+        path.join(installPath, 'skills/planning'),
+        path.join(installPath, 'skills/automation'),
+        path.join(installPath, 'agents/scheduler'),
+        path.join(installPath, 'hooks/chains')
+      ];
+      
+      for (const dir of legacyDirs) {
+        try {
+          await fs.rm(dir, { recursive: true, force: true });
+          colorLog('cyan', `  ✓ Removed legacy ${path.relative(installPath, dir)}`);
+        } catch {
+          // Directory might not exist, continue
+        }
+      }
+      
+      // Remove legacy files
+      const legacyFiles = [
+        path.join(installPath, 'workflows/on-schedule-trigger.json')
+      ];
+      
+      for (const file of legacyFiles) {
+        try {
+          await fs.unlink(file);
+          colorLog('cyan', `  ✓ Removed legacy ${path.relative(installPath, file)}`);
+        } catch {
+          // File might not exist, continue
+        }
+      }
+    }
+    
     // Install pnpm if not available
     try {
       await execCommand('pnpm --version', options.path);
