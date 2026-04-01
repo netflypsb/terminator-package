@@ -8,17 +8,28 @@ Terminator brings the high-powered agentic capabilities of coding IDEs (Windsurf
 
 ---
 
-## One-Prompt Install
+## One-Prompt Install (Recommended)
 
+### Option 1: NPX Super-Easy Install ⭐ (Fastest)
+```bash
+npx terminator-ai
+```
+That's it! This single command will:
+- ✅ Detect your IDE automatically (VS Code, Cursor, Windsurf, Claude Code)
+- ✅ Download and install all 8 MCP servers with 68+ tools
+- ✅ Set up all 12 skills and 6 agents
+- ✅ Configure IDE integration and extensions
+- ✅ Transform your AI agent into Terminator
+
+### Option 2: IDE Agent Install (Easy)
 Open your project in an agentic IDE and give this single prompt:
 
 > **"Read the INSTALL section in the README at https://github.com/netflypsb/terminator-package and set up Terminator in this workspace."**
 
-That's it. Your AI agent will handle the rest. Terminator installs into a hidden `.terminator-package/` folder so your project stays clean.
+Your AI agent will handle the complete installation automatically. Terminator installs into a hidden `.terminator-package/` folder so your project stays clean.
 
-### INSTALL
-
-These are the exact steps the AI agent (or you) should follow to add Terminator to an **existing project**:
+### Option 3: Manual Install (Advanced)
+If you prefer manual installation or need custom configuration:
 
 ```bash
 # 1. Clone Terminator into a hidden subfolder (keeps your project clean)
@@ -37,8 +48,7 @@ cd .terminator-package && pnpm install
 pnpm build
 
 # 6. Go back to project root and run the installer
-cd ..
-node .terminator-package/installer/dist/install.js
+cd .. && node .terminator-package/installer/dist/install.js
 
 # 7. Restart your IDE to pick up MCP server configurations
 # 8. Run the doctor to verify everything is healthy
