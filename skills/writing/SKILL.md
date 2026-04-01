@@ -1,6 +1,6 @@
 ---
-name: Writing
-description: Document writing, editing, and content creation
+name: writing
+description: Documents, reports, articles, and editing, and content creation
 triggers:
   - write
   - draft

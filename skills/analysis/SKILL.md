@@ -1,5 +1,5 @@
 ---
-name: Analysis
+name: analysis
 description: Data analysis, pattern finding, and report generation
 triggers:
   - analyze

@@ -12,21 +12,19 @@ npx terminator-ai
 
 That's it! The installer will:
 - ✅ Detect your IDE automatically
-- ✅ Download Terminator package
-- ✅ Install all dependencies
-- ✅ Build MCP servers and skills
+- ✅ Install all 7 MCP servers with 48+ tools
+- ✅ Set up all 10 skills and 5 agents
 - ✅ Configure IDE integration
-- ✅ Set up UI extension
+- ✅ Set up office document management
 
 ## Features
 
 ### 🤖 What You Get
-- **8 MCP Servers** with 68+ tools
-- **12 Skills** for specialized expertise
-- **6 Agents** for complex tasks
+- **7 MCP servers** with 48+ tools
+- **10 Skills** for specialized expertise
+- **5 Agents** for complex tasks
 - **Office Document Management** (Word, Excel, PowerPoint, PDF)
 - **Persistent Memory** across sessions
-- **Task Scheduling** and automation
 - **Multi-channel Communications** (Telegram, Discord, Slack)
 - **Web Browsing** and research
 - **Data Processing** and analysis
@@ -121,14 +119,10 @@ Terminator IS the project root:
 3. **Ask your AI agent**:
    > "Read the INSTALL section in .terminator-package/TERMINATOR.md and set up Terminator"
 
-4. **Install UI Extension** (if not Claude Code):
-   - Install "Terminator Panel" from your IDE's marketplace
-
 ## What's Installed
 
 ### MCP Servers
 - `terminator-memory` - Persistent memory across sessions
-- `terminator-scheduler` - Task scheduling and automation
 - `terminator-comms` - Multi-channel communications
 - `terminator-browser` - Web browsing and research
 - `terminator-data` - Data processing and analysis
@@ -141,8 +135,6 @@ Terminator IS the project root:
 - `writing` - Document creation and editing
 - `analysis` - Data analysis and statistics
 - `communication` - Message drafting and sending
-- `planning` - Project planning and scheduling
-- `automation` - Workflow automation
 - `coding` - Software development
 - `summarize` - Content summarization
 - `office-documents` - Document lifecycle management

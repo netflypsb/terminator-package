@@ -1,6 +1,6 @@
 ---
 name: Summarize
-description: Summarization across formats — web pages, documents, data, conversations
+description: Condensing documents, pages, conversations, and data — web pages, documents, data, conversations
 triggers:
   - summarize
   - summary

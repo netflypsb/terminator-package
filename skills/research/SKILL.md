@@ -1,6 +1,6 @@
 ---
 name: Research
-description: Web research, information gathering, and synthesis
+description: Web research, multi-source gathering, and synthesis
 triggers:
   - research
   - investigate

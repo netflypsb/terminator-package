@@ -1,6 +1,6 @@
 ---
 name: office-documents
-description: Expert knowledge of office document management - Word, Excel, PowerPoint, PDF lifecycle management
+description: Word, Excel, PowerPoint, PDF lifecycle management
 triggers:
   - create word document
   - create excel spreadsheet

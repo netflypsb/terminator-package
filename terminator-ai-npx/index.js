@@ -33,6 +33,28 @@ function showBanner() {
   colorLog('bright', 'Transforming any IDE into an autonomous AI worker...\n');
 }
 
+function showUsage() {
+  colorLog('cyan', 'Usage:');
+  colorLog('white', '  npx terminator-ai install [options]');
+  colorLog('white', '  npx terminator-ai doctor');
+  colorLog('white', '  npx terminator-ai uninstall');
+  colorLog('white', '  npx terminator-ai update');
+  colorLog('cyan', '\nInstall Options:');
+  colorLog('white', '  --ide <ide>        Specify IDE (vscode, cursor, windsurf, claude-code)');
+  colorLog('white', '  --path <path>      Installation directory (default: current)');
+  colorLog('white', '  --force            Force reinstall even if already installed');
+  colorLog('white', '  --upgrade          Upgrade existing installation to latest version');
+  colorLog('white', '  --embedded         Install in embedded mode (default)');
+  colorLog('white', '  --standalone       Install in standalone mode');
+  colorLog('white', '  --dev              Use development branch');
+  colorLog('cyan', '\nExamples:');
+  colorLog('white', '  npx terminator-ai install');
+  colorLog('white', '  npx terminator-ai install --ide vscode');
+  colorLog('white', '  npx terminator-ai install --upgrade');
+  colorLog('white', '  npx terminator-ai install --force');
+  colorLog('cyan', '\nFor more help, visit: https://github.com/netflypsb/terminator-package');
+}
+
 function execCommand(command, cwd) {
   return new Promise((resolve, reject) => {
     const process = spawn(command, { 
@@ -71,6 +93,138 @@ async function downloadFile(url, filePath) {
   
   const buffer = await response.arrayBuffer();
   await fs.writeFile(filePath, Buffer.from(buffer));
+}
+
+async function detectExistingInstallation(installPath) {
+  try {
+    // Check if .terminator-package exists
+    const terminatorPackagePath = path.join(installPath, '.terminator-package');
+    const packageExists = await fs.access(terminatorPackagePath).then(() => true).catch(() => false);
+    
+    if (!packageExists) {
+      return { exists: false, version: 'unknown', needsUpgrade: false };
+    }
+    
+    // Check for old version indicators
+    const oldIndicators = {
+      hasScheduler: await fs.access(path.join(terminatorPackagePath, 'mcp-servers/terminator-scheduler')).then(() => true).catch(() => false),
+      hasExtensions: await fs.access(path.join(terminatorPackagePath, 'extensions')).then(() => true).catch(() => false),
+      hasChains: await fs.access(path.join(terminatorPackagePath, 'workflows/chains')).then(() => true).catch(() => false),
+      hasOldHooks: await fs.access(path.join(installPath, '.terminator/hooks-registry.json')).then(() => true).catch(() => false)
+    };
+    
+    // Check version from package.json if available
+    let packageVersion = 'unknown';
+    try {
+      const packageJsonPath = path.join(terminatorPackagePath, 'package.json');
+      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+      packageVersion = packageJson.version || 'unknown';
+    } catch {
+      // Ignore if package.json doesn't exist or is invalid
+    }
+    
+    // Determine if upgrade is needed
+    const needsUpgrade = oldIndicators.hasScheduler || oldIndicators.hasExtensions || oldIndicators.hasChains;
+    
+    return {
+      exists: true,
+      version: packageVersion,
+      needsUpgrade,
+      oldIndicators
+    };
+  } catch (error) {
+    return { exists: false, version: 'unknown', needsUpgrade: false };
+  }
+}
+
+async function performUpgrade(installPath) {
+  colorLog('yellow', '🔄 Detected previous installation with UI/scheduling features');
+  colorLog('cyan', 'Performing upgrade to streamlined version...');
+  
+  try {
+    // First, run the uninstaller to clean up IDE configurations
+    const installerPath = path.join(installPath, '.terminator-package/installer/dist/uninstall.js');
+    if (await fs.access(installerPath).then(() => true).catch(() => false)) {
+      colorLog('cyan', 'Removing old IDE configurations...');
+      try {
+        await execCommand(`node "${installerPath}"`, path.dirname(installPath));
+      } catch (error) {
+        colorLog('yellow', `⚠ Uninstaller warning: ${error.message}`);
+      }
+    }
+    
+    // Remove old source directories completely
+    const oldDirs = [
+      path.join(installPath, 'extensions'),
+      path.join(installPath, 'mcp-servers/terminator-scheduler'),
+      path.join(installPath, 'workflows/chains'),
+      path.join(installPath, 'skills/planning'),
+      path.join(installPath, 'skills/automation'),
+      path.join(installPath, 'agents/scheduler'),
+      path.join(installPath, 'hooks/chains')
+    ];
+    
+    for (const dir of oldDirs) {
+      try {
+        await fs.rm(dir, { recursive: true, force: true });
+        colorLog('cyan', `  ✓ Removed ${path.relative(installPath, dir)}`);
+      } catch {
+        // Directory might not exist, continue
+      }
+    }
+    
+    // Remove old hook files
+    const oldHookFiles = [
+      path.join(installPath, 'workflows/on-schedule-trigger.json'),
+      path.join(installPath, '.terminator-package/workflows/on-schedule-trigger.json')
+    ];
+    
+    for (const file of oldHookFiles) {
+      try {
+        await fs.unlink(file);
+        colorLog('cyan', `  ✓ Removed ${path.relative(installPath, file)}`);
+      } catch {
+        // File might not exist, continue
+      }
+    }
+    
+    // Remove old runtime state that might reference old components
+    const runtimeStateFiles = [
+      path.join(path.dirname(installPath), '.terminator/hooks-registry.json'),
+      path.join(path.dirname(installPath), '.terminator/schedules.db')
+    ];
+    
+    for (const file of runtimeStateFiles) {
+      try {
+        await fs.unlink(file);
+        colorLog('cyan', `  ✓ Removed old runtime state ${path.basename(file)}`);
+      } catch {
+        // File might not exist, continue
+      }
+    }
+    
+    // Remove VS Code extension if installed
+    const vscodeExtensions = [
+      path.join(path.dirname(installPath), '.vscode/extensions/terminator-panel.vsix'),
+      path.join(path.dirname(installPath), '.terminator/terminator-panel.vsix')
+    ];
+    
+    for (const ext of vscodeExtensions) {
+      try {
+        await fs.unlink(ext);
+        colorLog('cyan', `  ✓ Removed VS Code extension ${path.basename(ext)}`);
+      } catch {
+        // Extension might not exist, continue
+      }
+    }
+    
+    colorLog('green', '✅ Old version cleaned up successfully');
+    return true;
+  } catch (error) {
+    colorLog('red', `⚠️ Upgrade cleanup warning: ${error.message}`);
+    colorLog('yellow', 'Continuing with fresh installation...');
+    return false;
+  }
 }
 
 async function extractTar(tarPath, extractPath) {
@@ -148,8 +302,14 @@ async function main() {
       case 'update':
         await handleUpdate(args.slice(1));
         break;
+      case 'help':
+      case '--help':
+      case '-h':
+        showUsage();
+        break;
       default:
         colorLog('red', `Unknown command: ${command}`);
+        colorLog('cyan', 'Use "npx terminator-ai help" for usage information');
         process.exit(1);
     }
   } catch (error) {
@@ -166,6 +326,7 @@ async function handleInstall(args) {
     ide: '',
     path: process.cwd(),
     force: false,
+    upgrade: false,
     embedded: true,
     standalone: false,
     dev: false
@@ -188,6 +349,9 @@ async function handleInstall(args) {
           break;
         case 'force':
           options.force = true;
+          break;
+        case 'upgrade':
+          options.upgrade = true;
           break;
         case 'embedded':
           options.embedded = true;
@@ -228,15 +392,29 @@ async function handleInstall(args) {
   colorLog('green', `Installation mode: ${options.embedded ? 'embedded' : 'standalone'}`);
   colorLog('green', `Installation path: ${installPath}`);
   
-  // Check if already installed
-  if (!options.force) {
-    try {
-      await fs.access(installPath);
+  // Check for existing installation and handle upgrade
+  const existingInstall = await detectExistingInstallation(installPath);
+  
+  if (existingInstall.exists) {
+    if (options.upgrade || existingInstall.needsUpgrade) {
+      if (existingInstall.needsUpgrade) {
+        colorLog('yellow', `🔄 Detected previous installation (version ${existingInstall.version})`);
+        colorLog('cyan', 'Old version contains UI extension and/or scheduling features');
+        colorLog('cyan', 'Upgrading to streamlined version (v0.2.0)...');
+      } else {
+        colorLog('yellow', `🔄 Current installation detected (version ${existingInstall.version})`);
+        colorLog('cyan', 'Upgrading to latest version...');
+      }
+      
+      // Perform upgrade cleanup
+      await performUpgrade(installPath);
+      
+      colorLog('green', '✅ Upgrade preparation complete');
+      colorLog('cyan', 'Continuing with fresh installation...');
+    } else if (!options.force) {
       colorLog('yellow', 'Terminator already installed at this location');
-      colorLog('cyan', 'Use --force to reinstall');
+      colorLog('cyan', 'Use --force to reinstall or --upgrade to check for updates');
       return;
-    } catch {
-      // Not installed, continue
     }
   }
   
@@ -334,15 +512,29 @@ async function handleInstall(args) {
       colorLog('yellow', `⚠ IDE configuration warning: ${error.message}`);
     }
     
+    const wasUpgrade = existingInstall.exists && (options.upgrade || existingInstall.needsUpgrade);
+    
     colorLog('green', '\n✅ Terminator AI Worker installed successfully!');
+    if (wasUpgrade) {
+      colorLog('cyan', '\n🔄 Upgrade completed!');
+      colorLog('white', '• Old UI extension and scheduling features removed');
+      colorLog('white', '• Streamlined to core knowledge work capabilities');
+      colorLog('white', '• All configurations preserved and updated');
+    }
     colorLog('cyan', '\nNext steps:');
     colorLog('white', `1. Restart your ${ide} IDE`);
-    colorLog('white', '2. Open your project folder');
-    colorLog('white', '3. Ask your AI agent: "Read the INSTALL section in .terminator-package/TERMINATOR.md and set up Terminator"');
-    
-    if (ide !== 'claude-code') {
-      colorLog('white', `4. Install the "Terminator Panel" extension from your IDE's marketplace`);
-    }
+    colorLog('white', '2. Ask your AI agent: "What capabilities do you have as a Terminator?"');
+    colorLog('white', '3. Edit .env to add API keys for Telegram/Discord/etc (optional)');
+    colorLog('cyan', '\n🎉 What you get:');
+    colorLog('white', '• 7 MCP servers with 48+ tools');
+    colorLog('white', '• 10 specialized skills');
+    colorLog('white', '• 5 expert agents');
+    colorLog('white', '• 2 automation hooks');
+    colorLog('white', '• Office document management');
+    colorLog('white', '• Persistent memory across sessions');
+    colorLog('white', '• Multi-channel communications');
+    colorLog('white', '• Web browsing and research');
+    colorLog('white', '• Data processing and analysis');
     
     colorLog('bright', '\n🚀 Your AI agent is now Terminator - an autonomous knowledge worker!');
     

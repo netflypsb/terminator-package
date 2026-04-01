@@ -1,6 +1,6 @@
 ---
-name: Onboarding
-description: Guide new users through setup, capabilities, and first steps
+name: onboarding
+description: Guiding new users through capabilities and setup first steps
 triggers:
   - help
   - get started

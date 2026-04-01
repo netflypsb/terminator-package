@@ -1,6 +1,6 @@
 ---
-name: Coding
-description: Enhanced coding workflows with research, testing, and documentation
+name: coding
+description: Software development, debugging, and testing workflows with research, testing, and documentation
 triggers:
   - code
   - implement

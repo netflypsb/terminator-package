@@ -1,6 +1,6 @@
 ---
 name: office-automation
-description: Expert knowledge of office document automation workflows and recurring task management
+description: Document workflows and recurring report generationmation workflows and recurring task management
 triggers:
   - automate document creation
   - recurring report generation

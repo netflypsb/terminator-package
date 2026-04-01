@@ -1,5 +1,5 @@
 ---
-name: Communication
+name: communication
 description: Drafting and sending messages across channels
 triggers:
   - send message
